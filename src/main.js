@@ -1,0 +1,614 @@
+import './style.css';
+
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+const priorities = [
+  { id:'insurance', level: 'critical', title: 'Review commercial insurance', detail: 'Premiums are 18% above the peer benchmark.', savings: 18300 },
+  { id:'processing', level: 'high', title: 'Renegotiate merchant processing', detail: 'Effective fees increased 11% this quarter.', savings: 14800 },
+  { id:'software', level: 'medium', title: 'Consolidate overlapping software', detail: '27 paid seats show no activity in 90 days.', savings: 7900 },
+  { id:'cashflow', level: 'positive', title: 'Cash flow improved', detail: '90-day liquidity risk moved from moderate to low.', savings: 0 },
+  { id:'freight', level: 'positive', title: 'New freight savings opportunity', detail: 'West-location freight cost is 12% above average.', savings: 5100 }
+];
+
+const ACTIONS_KEY='atlasExecutiveActions23';
+const defaultActions=priorities.filter(p=>p.savings>0).map((p,index)=>({id:p.id,title:p.title,impact:p.savings,status:index===0?'in-progress':'identified',owner:index===0?'Brian Hess':'Unassigned',due:index===0?'Aug 14, 2026':'Not scheduled',realized:0}));
+function loadActions(){try{const saved=JSON.parse(localStorage.getItem(ACTIONS_KEY)||'null');return Array.isArray(saved)&&saved.length?saved:structuredClone(defaultActions)}catch{return structuredClone(defaultActions)}}
+function saveActions(actions){localStorage.setItem(ACTIONS_KEY,JSON.stringify(actions))}
+function actionSummary(){const actions=loadActions();return {actions,identified:actions.reduce((n,a)=>n+a.impact,0),realized:actions.reduce((n,a)=>n+(Number(a.realized)||0),0),completed:actions.filter(a=>a.status==='completed').length,inProgress:actions.filter(a=>a.status==='in-progress').length}}
+
+const intelligence = [
+  ['Insurance market', 'Commercial premiums are softening for low-claim manufacturers.', '6 min ago'],
+  ['Fuel costs', 'Regional diesel prices are trending 2.1% lower this month.', '18 min ago'],
+  ['Steel watch', 'Input prices rose 3.0%; review open purchase orders.', '36 min ago'],
+  ['Compliance', 'A new OSHA recordkeeping reminder is approaching.', '1 hr ago'],
+  ['Rates', 'Borrowing-cost outlook is stable for the next planning cycle.', '2 hr ago']
+];
+
+const app = document.querySelector('#app');
+app.innerHTML = `
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">A</span><div><strong>ATLAS AI</strong><small>SMARTLEDGER</small></div></div>
+    <nav class="sidebar-nav">
+      ${['Dashboard','Financial Imports','Transactions','Import History','Payments & Billing','Settings'].map((x,i)=>`<button class="nav-item ${i===0?'active':''}" data-nav="${x}"><span>${['⌂','⇧','≡','◷','$','⚙'][i]}</span>${x}</button>`).join('')}
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="privacy-card"><span>◇</span><div><strong>Private processing</strong><small>Files remain in your browser</small></div></div>
+      <button class="signout">↪ Sign out</button>
+    </div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar">
+      <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name">Atlas AI Demo Company⌄</button></div>
+      <div class="top-actions">
+        <button class="outline" id="presentationBtn">Presentation mode</button>
+        <span class="release">ATLAS 24.1 · CONTEXT INTELLIGENCE</span>
+        <div class="profile"><span>BH</span><div><strong>Brian Hess</strong><small>Owner</small></div></div>
+      </div>
+    </header>
+
+    <section class="demo-strip"><div><span class="live">LIVE DEMO WORKSPACE</span><strong>Atlas Manufacturing Group</strong><span>Fictional but internally consistent data · 9,842 transactions</span></div><button class="outline" id="reloadBtn">Reload demo data</button></section>
+
+    <main class="page" id="mainPage">
+      <section class="welcome-card">
+        <div>
+          <span class="micro">ATLAS EXECUTIVE COMMAND CENTER · SPRINT 24.1</span>
+          <h1 id="dynamicGreeting">Good afternoon, Brian.</h1>
+          <p>Atlas completed your executive review and prepared the changes that need your attention.</p>
+          <div class="welcome-actions"><button class="gold" id="briefBtn">View executive brief</button><button class="ghost" id="actionTrackerBtn">Open action tracker</button><button class="ghost" id="askBtn">Ask Atlas</button></div>
+        </div>
+        <div class="welcome-stats">
+          <article><span>OPPORTUNITIES</span><strong class="count" data-value="4">0</strong><small>Ready for review</small></article>
+          <article><span>ANNUAL SAVINGS</span><strong class="count money" data-value="46100">$0</strong><small>Identified by Atlas</small></article>
+          <article><span>FINANCIAL HEALTH</span><strong class="count" data-value="92">0</strong><small>Healthy</small></article>
+          <article><span>ATLAS CONFIDENCE</span><strong class="count percent" data-value="98">0%</strong><small>High confidence</small></article>
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="main-column">
+          <section class="kpi-grid">
+            <article class="panel kpi"><span>ANNUAL REVENUE</span><strong class="count money" data-value="28400000">$0</strong><small>Healthy operating trend</small></article>
+            <article class="panel kpi"><span>CASH ON HAND</span><strong class="count money" data-value="2840000">$0</strong><small>Low 90-day risk</small></article>
+            <article class="panel kpi"><span>ACTIVE VENDORS</span><strong class="count" data-value="412">0</strong><small>Across 3 locations</small></article>
+            <article class="panel kpi"><span>SAVINGS IDENTIFIED</span><strong class="count money" data-value="46100">$0</strong><small>4 ranked opportunities</small></article>
+          </section>
+
+          <section class="panel action-tracker-summary" id="actionTrackerSummary"></section>
+
+          <section class="panel action-center">
+            <div class="section-head"><div><span class="micro">CEO ACTION CENTER</span><h2>Today's executive priorities</h2></div><span class="ready-pill">RANKED BY ATLAS</span></div>
+            <div class="priority-list">
+              ${priorities.map((p,i)=>`<button class="priority-row" data-priority="${i}"><span class="priority-dot ${p.level}"></span><span class="priority-rank">${String(i+1).padStart(2,'0')}</span><span class="priority-copy"><strong>${p.title}</strong><small>${p.detail}</small></span><span class="impact">${p.savings?money.format(p.savings):'Positive trend'}</span><span class="arrow">›</span></button>`).join('')}
+            </div>
+          </section>
+
+          <section class="two-col">
+            <article class="panel savings-panel">
+              <div class="section-head"><div><span class="micro">SAVINGS TIMELINE</span><h2>Value identified this year</h2></div><strong>$46,100</strong></div>
+              <div class="timeline-bars">
+                ${[['Jan',4200],['Feb',6300],['Mar',8900],['Apr',11700],['May',6800],['Jun',8200]].map(([m,v])=>`<div><span class="bar" style="--h:${Math.round(v/11700*100)}%"></span><small>${m}</small><b>${money.format(v)}</b></div>`).join('')}
+              </div>
+            </article>
+            <article class="panel intelligence-panel">
+              <div class="section-head"><div><span class="micro">ATLAS INTELLIGENCE</span><h2>External signals to watch</h2></div><span class="pulse">● LIVE</span></div>
+              <div class="feed">${intelligence.map(([t,d,time])=>`<button class="feed-item"><span class="feed-icon">✦</span><span><strong>${t}</strong><small>${d}</small></span><time>${time}</time></button>`).join('')}</div>
+            </article>
+          </section>
+        </div>
+
+        <aside class="atlas-panel" id="atlasPanel">
+          <header><div class="atlas-title"><span class="atlas-logo">A</span><div><span>ATLAS · EXECUTIVE COPILOT</span><h2>Ask Atlas</h2><small>Proactive briefings, follow-ups, and remembered context.</small></div></div><div class="copilot-status"><span class="ready-pill green">● READY</span><span class="memory-pill">● MEMORY ON</span></div></header>
+          <div class="topic-row"><div><span>CURRENT TOPIC</span><strong id="topic">General business overview</strong><small id="memoryStatus">Conversation context ready</small><div class="context-chips"><span id="contextEntity">Business overview</span><span id="contextGoal">Review priorities</span><span id="contextConfidence">Context ready</span></div></div><div class="topic-actions"><button id="historyBtn">History</button><button id="newChat">New chat</button></div></div>
+          <div class="copilot-brief" id="copilotBrief"><span class="micro">SINCE YOUR LAST LOGIN</span><strong>4 executive changes detected</strong><small>Insurance renewal risk, new freight savings, stronger cash, and one invoice review.</small><button class="ghost" id="reviewChangesBtn">Review changes</button></div>
+          <div class="chat" id="chat"></div>
+          <div class="typing" id="typing"><span></span><span></span><span></span><em>Atlas is analyzing…</em></div>
+          <div class="quick-prompts">
+            <button data-prompt="Explain the top priority">Explain the top priority</button>
+            <button data-prompt="Show all savings">Show all savings</button>
+            <button data-prompt="What should I do first?">What should I do first?</button>
+            <button data-prompt="What changed since yesterday?">What changed since yesterday?</button>
+          </div>
+          <form id="chatForm"><input id="chatInput" placeholder="Ask Atlas a question…" autocomplete="off"><button class="gold">Send</button></form>
+        </aside>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="modal" id="modal"><div class="modal-card"><button class="modal-close" id="modalClose">×</button><span class="micro" id="modalEyebrow">EXECUTIVE BRIEF</span><h2 id="modalTitle">Atlas Executive Brief</h2><div id="modalBody"></div></div></div>
+<div class="toast" id="toast"></div>
+`;
+
+// Sprint 23.0.1 navigation recovery
+// Preserve the live dashboard before page switching and restore the page templates
+// that were omitted from the Sprint 23 package.
+const dashboardHTML = document.querySelector('#mainPage').innerHTML;
+
+const pageTemplates = {
+  'Financial Imports': `
+    <section class="page-heading"><div><span class="micro">FINANCIAL DATA HUB</span><h1>Financial Imports</h1><p>Bring bank, credit-card, and accounting activity into SmartLedger.</p></div><button class="outline ask-page" data-page="Financial Imports">Ask Atlas about imports</button></section>
+    <section class="page-grid two-up">
+      <article class="panel functional-card"><span class="micro">BANK & CREDIT CARD</span><h2>Import a CSV statement</h2><p>Upload exported transactions from your financial institution. Files remain in your browser during this demonstration.</p><button class="gold" data-import="CSV statement">Choose CSV file</button></article>
+      <article class="panel functional-card"><span class="micro">ACCOUNTING PLATFORM</span><h2>Connect accounting data</h2><p>Preview the guided QuickBooks and ledger connection workflow.</p><button class="outline" data-import="accounting data">Start guided connection</button></article>
+    </section>
+    <section class="panel page-table-panel"><div class="section-head"><div><span class="micro">RECENT ACTIVITY</span><h2>Latest imports</h2></div><span class="ready-pill">ALL SYSTEMS READY</span></div><div class="simple-list"><div><strong>Operating Account</strong><span>4,281 records · July 30, 2026</span><b>Completed</b></div><div><strong>Corporate Visa</strong><span>3,204 records · July 29, 2026</span><b>Completed</b></div><div><strong>Payroll Clearing</strong><span>2,357 records · July 28, 2026</span><b>Completed</b></div></div></section>`,
+
+  'Transactions': `
+    <section class="page-heading"><div><span class="micro">FINANCIAL ACTIVITY</span><h1>Transactions</h1><p>Search recent activity and inspect items identified by Atlas.</p></div><button class="outline ask-page" data-page="Transactions">Ask Atlas about transactions</button></section>
+    <section class="panel page-table-panel"><div class="table-tools"><input id="transactionSearch" placeholder="Search vendor, date, or amount"><select id="transactionFilter"><option>All categories</option><option>Insurance</option><option>Processing</option><option>Software</option><option>Freight</option></select><button class="outline" id="exportTransactions">Export CSV</button></div><div class="responsive-table"><table id="transactionsTable"><thead><tr><th>Vendor</th><th>Date</th><th>Category</th><th>Amount</th><th>Atlas status</th></tr></thead><tbody>
+      <tr class="transaction-row"><td>Harbor Commercial Insurance</td><td>Jul 30, 2026</td><td>Insurance</td><td>$24,880</td><td><span class="table-status opportunity">Opportunity</span></td></tr>
+      <tr class="transaction-row"><td>Northstar Merchant Services</td><td>Jul 29, 2026</td><td>Processing</td><td>$18,420</td><td><span class="table-status opportunity">Opportunity</span></td></tr>
+      <tr class="transaction-row"><td>CloudStack Software</td><td>Jul 28, 2026</td><td>Software</td><td>$6,980</td><td><span class="table-status review">Review</span></td></tr>
+      <tr class="transaction-row"><td>Western Freight Group</td><td>Jul 28, 2026</td><td>Freight</td><td>$12,740</td><td><span class="table-status normal">Normal</span></td></tr>
+      <tr class="transaction-row"><td>Midwest Steel Supply</td><td>Jul 27, 2026</td><td>Materials</td><td>$84,260</td><td><span class="table-status review">Review</span></td></tr>
+    </tbody></table></div></section>`,
+
+  'Import History': `
+    <section class="page-heading"><div><span class="micro">DATA AUDIT TRAIL</span><h1>Import History</h1><p>Review every completed financial-data import.</p></div><button class="outline ask-page" data-page="Import History">Ask Atlas about history</button></section>
+    <section class="panel page-table-panel"><div class="section-head"><div><span class="micro">12 SUCCESSFUL IMPORTS</span><h2>Workspace import log</h2></div><span class="ready-pill green">NO ERRORS</span></div><div class="simple-list history-list"><div><strong>Operating Account</strong><span>Jul 30, 2026 · 4,281 records · CSV</span><b>Completed</b></div><div><strong>Corporate Visa</strong><span>Jul 29, 2026 · 3,204 records · CSV</span><b>Completed</b></div><div><strong>Payroll Clearing</strong><span>Jul 28, 2026 · 2,357 records · CSV</span><b>Completed</b></div><div><strong>Operating Account</strong><span>Jun 30, 2026 · 4,112 records · CSV</span><b>Completed</b></div></div></section>`,
+
+  'Payments & Billing': `
+    <section class="page-heading"><div><span class="micro">SUBSCRIPTION MANAGEMENT</span><h1>Payments & Billing</h1><p>Manage your SmartLedger plan, payment method, and invoices.</p></div><button class="outline ask-page" data-page="Payments & Billing">Ask Atlas about billing</button></section>
+    <section class="page-grid billing-cards"><article class="panel functional-card"><span class="micro">CURRENT PLAN</span><h2>Professional</h2><strong class="billing-price">$299<span>/month</span></strong><p>3 companies · 10 users · Executive AI intelligence</p><button class="gold billing-action" data-billing="Upgrade plan">Manage plan</button></article><article class="panel functional-card"><span class="micro">PAYMENT METHOD</span><h2>Visa ending 4321</h2><p>Expires 04/29 · Next charge August 29, 2026</p><button class="outline billing-action" data-billing="Update payment method">Update payment method</button></article></section>
+    <section class="panel page-table-panel"><div class="section-head"><div><span class="micro">INVOICES</span><h2>Billing history</h2></div><button class="outline billing-action" data-billing="Download next invoice">Download next invoice</button></div><div class="simple-list"><div><strong>INV-2026-007</strong><span>July 29, 2026 · $299.00</span><button class="text-link billing-action" data-billing="Download INV-2026-007">Download</button></div><div><strong>INV-2026-006</strong><span>June 29, 2026 · $299.00</span><button class="text-link billing-action" data-billing="Download INV-2026-006">Download</button></div><div><strong>INV-2026-005</strong><span>May 29, 2026 · $299.00</span><button class="text-link billing-action" data-billing="Download INV-2026-005">Download</button></div></div></section>`,
+
+  'Settings': `
+    <section class="page-heading"><div><span class="micro">WORKSPACE CONTROLS</span><h1>Settings</h1><p>Configure executive briefings, security, and Atlas memory.</p></div><button class="outline ask-page" data-page="Settings">Ask Atlas about settings</button></section>
+    <section class="panel settings-panel"><div class="setting-row"><div><strong>Daily CEO briefing</strong><span>Prepare an executive summary each morning.</span></div><label class="switch"><input type="checkbox" checked><span></span></label></div><div class="setting-row"><div><strong>Atlas conversation memory</strong><span>Keep context for natural follow-up questions.</span></div><label class="switch"><input type="checkbox" checked><span></span></label></div><div class="setting-row"><div><strong>Executive notifications</strong><span>Alert the owner when a high-impact item changes.</span></div><label class="switch"><input type="checkbox" checked><span></span></label></div><div class="setting-row"><div><strong>Two-factor authentication</strong><span>Active for the owner account.</span></div><button class="outline settings-action">Manage security</button></div><button class="gold" id="saveSettings">Save settings</button></section>`
+};
+
+const replies = {
+  'Explain the top priority': 'Commercial insurance is ranked first because premiums are 18% above comparable manufacturers, no competitive rebid has occurred in 31 months, and two policy riders appear to overlap. Estimated annual savings: $18,300.',
+  'Show all savings': 'Atlas identified four savings opportunities totaling $46,100 annually: commercial insurance ($18,300), merchant processing ($14,800), software consolidation ($7,900), and freight optimization ($5,100).',
+  'What should I do first?': 'Start with commercial insurance. It has the highest estimated impact, the renewal window is approaching, and Atlas confidence is 96%.',
+  'What changed since yesterday?': 'Since yesterday, merchant processing fees increased 0.4%, cash on hand improved by $38,200, one new freight savings opportunity was identified, and no new liquidity risk was detected.'
+};
+
+const MEMORY_KEY='atlasNaturalConversation24_1';
+const conversationState={topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0};
+
+function loadMemory(){
+  try{const saved=localStorage.getItem(MEMORY_KEY)||localStorage.getItem('atlasNaturalConversation24')||localStorage.getItem('atlasNaturalConversation21_2_1')||'{}';Object.assign(conversationState,JSON.parse(saved));}catch{}
+}
+function saveMemory(){localStorage.setItem(MEMORY_KEY,JSON.stringify(conversationState));}
+function resetMemory(){
+  Object.assign(conversationState,{topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0});
+  localStorage.removeItem(MEMORY_KEY);
+}
+function setContext(topic,entity,intent,recommendation='',details={}){
+  conversationState.topic=topic;
+  conversationState.entity=entity||topic;
+  conversationState.lastIntent=intent;
+  if(recommendation) conversationState.recommendation=recommendation;
+  conversationState.goal=details.goal||conversationState.goal||'Review priorities';
+  conversationState.annualImpact=Number(details.annualImpact??conversationState.annualImpact)||0;
+  conversationState.referents=Array.isArray(details.referents)?details.referents:conversationState.referents||[];
+  conversationState.confidence=Number(details.confidence??conversationState.confidence)||0;
+  saveMemory();
+}
+function isFollowUp(q){
+  const clean=String(q||'').trim();
+  return /^(why|how|tell me more|explain (it|that|this)|what next|what should i do next|what do you recommend|compare (it|them|those)|draft (an )?email|do that|which one|is that important|how much|what caused it)[?.!]*$/i.test(clean)
+    || /\b(it|this|that|these|those|them|they|one|ones|each)\b/i.test(clean);
+}
+function monthlyImpact(){return Math.round((Number(conversationState.annualImpact)||0)/12);}
+function contextualAmountReply(prompt){
+  const q=String(prompt||'').toLowerCase();
+  const monthly=/month|monthly|each month/.test(q);
+  const annual=Number(conversationState.annualImpact)||0;
+  const topic=conversationState.topic;
+  if(!annual) return `I’m following the ${conversationState.entity} discussion, but I do not have a modeled dollar amount attached to it yet.`;
+  const amount=monthly?money.format(monthlyImpact()):money.format(annual);
+  const period=monthly?'per month':'per year';
+  const descriptions={software:'the 27 inactive or overlapping software seats',insurance:'the commercial insurance opportunity',processing:'the merchant-processing opportunity',freight:'the freight opportunity'};
+  const subject=descriptions[topic]||conversationState.entity;
+  return `The modeled impact for ${subject} is approximately ${amount} ${period}${monthly?` (${money.format(annual)} annually ÷ 12)`:''}. For software, that is the potential cost tied to inactive or overlapping licenses—not the company’s entire software bill.`;
+}
+
+function detectIntent(prompt){
+  const q=String(prompt||'').toLowerCase().trim();
+  if(replies[prompt]) return {type:'exact',reply:replies[prompt]};
+  if(/(?:how much|what.*cost|cost.*how much|pay for).*(?:month|monthly|year|annual)|(?:month|monthly).*(?:cost|pay)/.test(q) && (isFollowUp(q)||conversationState.topic!=='general')) return {type:'contextAmount'};
+  if(/draft.*email|write.*email/.test(q)) return {type:'draft'};
+  if(/compare carriers|compare them|carrier quotes/.test(q)) return {type:'carriers'};
+  if(/why|what caused|reason/.test(q) && isFollowUp(q)) return {type:'why'};
+  if(/what next|what should i do next|what do you recommend|do first|where.*start/.test(q)) return {type:'next'};
+  if(/tell me more|explain (it|that|this)|more detail/.test(q)) return {type:'more'};
+  if(/which one|biggest|largest/.test(q) && isFollowUp(q)) return {type:'which'};
+  if(/top priority|highest priority|main priority|first priority/.test(q)) return {type:'priority'};
+  if(/all savings|show.*savings|saving opportunities|opportunit/.test(q)) return {type:'savings'};
+  if(/yesterday|what changed|since yesterday|daily change/.test(q)) return {type:'changes'};
+  if(/18,300|estimate.*insurance|insurance.*estimate/.test(q)) return {type:'insuranceEstimate'};
+  if(/invoice.*review|review.*invoice|vendor invoice/.test(q)) return {type:'invoiceReview'};
+  if(/insurance|premium|carrier|broker/.test(q)) return {type:'insurance'};
+  if(/merchant|processing fee|credit card fee/.test(q)) return {type:'processing'};
+  if(/software|subscription|license|seat/.test(q)) return {type:'software'};
+  if(/freight|shipping|logistics/.test(q)) return {type:'freight'};
+  if(/cash|liquidity|cash flow/.test(q)) return {type:'cash'};
+  if(/vendor|supplier/.test(q)) return {type:'vendor'};
+  if(/transaction|charge|payment|invoice/.test(q) && /explain|review|why|unusual|flag/.test(q)) return {type:'transaction'};
+  if(/import|csv|excel|quickbooks|upload/.test(q)) return {type:'imports'};
+  if(/bill|billing|plan|subscription|299|invoice/.test(q)) return {type:'billing'};
+  if(/setting|notification|security|two-factor|memory|preference/.test(q)) return {type:'settings'};
+  if(/revenue|sales|top line|bookings/.test(q)) return {type:'revenue'};
+  if(/profit|margin|ebitda|gross margin|net income|earnings/.test(q)) return {type:'profitability'};
+  if(/payroll|labor|wages|overtime|headcount|employee cost/.test(q)) return {type:'payroll'};
+  if(/tax|irs|sales tax|estimated tax/.test(q)) return {type:'taxes'};
+  if(/compliance|osha|regulation|regulatory|audit/.test(q)) return {type:'compliance'};
+  if(/receivable|accounts receivable|ar aging|collections|customer payment|days sales outstanding|dso/.test(q)) return {type:'receivables'};
+  if(/payable|accounts payable|ap aging|supplier payment/.test(q)) return {type:'payables'};
+  if(/inventory|stock level|slow moving|obsolete/.test(q)) return {type:'inventory'};
+  if(/debt|loan|interest|credit line|borrowing/.test(q)) return {type:'debt'};
+  if(/runway|how long.*cash|months of cash/.test(q)) return {type:'runway'};
+  if(/forecast|projection|outlook|next quarter|year end/.test(q)) return {type:'forecast'};
+  if(/budget|variance|over budget|under budget/.test(q)) return {type:'budget'};
+  if(/location|branch|site|division/.test(q)) return {type:'locations'};
+  if(/customer|client|concentration|churn/.test(q)) return {type:'customers'};
+  if(/duplicate|double charge/.test(q)) return {type:'duplicate'};
+  if(/anomal|unusual|outlier|suspicious/.test(q)) return {type:'anomalies'};
+  if(/largest expense|biggest expense|top cost|where.*spend/.test(q)) return {type:'expenses'};
+  if(/risk|warning|concern/.test(q)) return {type:'risk'};
+  if(isFollowUp(q)) return {type:'followup'};
+  return {type:'unknown'};
+}
+
+function contextualFollowUp(type){
+  const topic=conversationState.topic;
+  if(type==='why'){
+    const reasons={
+      insurance:'The increase appears tied to renewal pricing, a long gap since the last competitive bid, and two overlapping riders. Claims history does not appear to be the primary driver.',
+      processing:'The effective rate rose because transaction mix shifted toward higher-cost card types and the current agreement has not been repriced recently.',
+      software:'The opportunity exists because 27 paid seats show no activity in 90 days and several tools have overlapping functions.',
+      freight:'The west location is using higher-cost lanes and more fragmented shipments than the other locations.',
+      cash:'Cash improved because collections exceeded outgoing payments since yesterday, while no unusually large disbursement posted.',
+      invoice:'The invoice was flagged because it is 22% above the vendor’s six-month average and includes an unusual freight surcharge.',
+      payroll:'Payroll rose because overtime increased at the west location and two temporary roles converted to full-time positions.',
+      profitability:'Margin pressure is coming mainly from insurance, processing fees, and west-location freight rather than a decline in revenue.',
+      receivables:'Receivables aged because three larger customers paid later than their normal pattern, increasing DSO.',
+      inventory:'Inventory is elevated because several slow-moving SKUs have not matched recent sales velocity.'
+    };
+    return reasons[topic]||'I can explain the reason, but I need to know which item you mean. Are you referring to insurance, merchant processing, software, freight, cash flow, or the vendor invoice?';
+  }
+  if(type==='next'){
+    const actions={
+      insurance:'First, gather the current policy, loss runs, and coverage schedule. Then request three like-for-like quotes before renewal. Compare exclusions and deductibles—not only price.',
+      processing:'Calculate the blended processing rate from the latest statement, identify surcharges, and request repricing from the current provider plus one competitor.',
+      software:'Send the inactive-seat list to department owners, confirm which licenses are still required, and cancel unused seats before the next renewal.',
+      freight:'Compare the west location’s top five lanes, consolidate shipments where possible, and request updated carrier quotes.',
+      invoice:'Hold approval temporarily, match the invoice to the purchase order, and ask the vendor to explain the freight surcharge.',
+      savings:'Begin with insurance, then merchant processing. Together they represent $33,100 of the $46,100 annual opportunity.',
+      payroll:'Review overtime by department and compare staffing schedules before changing headcount.',
+      profitability:'Protect margin by acting on the top two savings opportunities before considering broad cost cuts.',
+      receivables:'Contact the three largest overdue accounts and tighten follow-up at 15, 30, and 45 days.',
+      inventory:'Pause reorders for slow-moving SKUs and validate demand before discounting inventory.'
+    };
+    return actions[topic]||conversationState.recommendation;
+  }
+  if(type==='more'){
+    const details={
+      insurance:'Here’s what stands out: premiums are 18% above the peer benchmark, the account has not been rebid in 31 months, and two riders may overlap. Atlas estimates an achievable 8–12% reduction, equal to about $18,300 annually.',
+      processing:'The $14,800 estimate comes from the recent increase in the effective fee rate and the volume processed. A merchant statement would let Atlas separate interchange, assessments, and processor markup.',
+      software:'The estimate assumes removal or renegotiation of inactive seats only. Atlas is not recommending removal of software that has active users or a clear operational purpose.',
+      freight:'The opportunity is concentrated at the west location, where cost per shipment is 12% above the company average. Lane consolidation is likely the fastest first test.',
+      invoice:'The charge has not been labeled fraudulent or duplicate. It is a review item because its amount and surcharge differ from the vendor’s normal pattern.',
+      payroll:'Payroll is 4.2% above the prior month, led by overtime at the west location. Base wages remain close to plan.',
+      profitability:'Gross margin is 31.6%, down 0.8 percentage points from the prior period. The largest recoverable drivers are insurance and processing fees.',
+      receivables:'Accounts receivable totals $1.74 million; $286,000 is over 45 days. Three customers account for most of the aging.',
+      inventory:'Inventory totals $3.1 million, with about $214,000 classified as slow-moving in the demo data.'
+    };
+    return details[topic]||`We are currently discussing ${conversationState.entity}. Ask “why,” “what should I do next,” or name the detail you want me to examine.`;
+  }
+  if(type==='draft'){
+    if(topic==='insurance') return 'Subject: Request for commercial insurance review\n\nHello,\n\nWe are reviewing our upcoming commercial insurance renewal and would like a complete comparison of our current coverage, premiums, deductibles, exclusions, and policy riders. Please provide our current policy schedule and loss runs, then prepare competitive options using equivalent coverage assumptions.\n\nPlease also identify any overlapping riders or coverage that may be consolidated.\n\nThank you,\nBrian K. Hess';
+    if(topic==='invoice') return 'Subject: Question regarding recent invoice\n\nHello,\n\nWe are reviewing your recent invoice, which is above our typical six-month average and includes a freight surcharge we would like to verify. Please provide the related purchase order, shipment detail, and an explanation of the surcharge before we approve payment.\n\nThank you,\nBrian K. Hess';
+    return 'I can draft that. Should the email address the insurance broker, payment processor, software owner, freight carrier, or invoice vendor?';
+  }
+  if(type==='carriers') return 'Use the same coverage schedule and loss-run package for all three quotes. Compare total premium, deductibles, exclusions, carrier rating, claims service, and overlapping riders. Atlas would not choose the lowest price if the coverage is materially weaker.';
+  return `I’m still following the ${conversationState.entity} discussion. Would you like the reason, the financial impact, the recommended next step, or a draft communication?`;
+}
+
+function buildReply(prompt){
+  const intent=detectIntent(prompt);
+  if(intent.reply){
+    if(prompt==='Show all savings') setContext('savings','four savings opportunities','savings','Begin with insurance, then merchant processing.');
+    if(prompt==='Explain the top priority') setContext('insurance','commercial insurance opportunity','priority','Request three competitive quotes before renewal.');
+    if(prompt==='What should I do first?') setContext('insurance','commercial insurance opportunity','next','Request three competitive quotes before renewal.');
+    return intent.reply+'\n\nExecutive recommendation: '+conversationState.recommendation;
+  }
+  if(intent.type==='contextAmount') return contextualAmountReply(prompt);
+  if(['why','next','more','draft','carriers','followup','which'].includes(intent.type)){
+    if(intent.type==='which') return 'Commercial insurance is the largest opportunity at $18,300 annually, followed by merchant processing at $14,800.';
+    return contextualFollowUp(intent.type);
+  }
+  switch(intent.type){
+    case 'priority': setContext('insurance','commercial insurance opportunity','priority','Request three competitive quotes before renewal.'); return replies['Explain the top priority']+'\n\nExecutive recommendation: Request three like-for-like quotes before renewal. Confidence: 96%.';
+    case 'savings': setContext('savings','four savings opportunities','savings','Begin with insurance, then merchant processing.'); return replies['Show all savings']+'\n\nThe first two opportunities represent $33,100, or roughly 72% of the total.';
+    case 'changes': setContext('changes','changes since yesterday','changes','Review the new freight opportunity and flagged invoice.'); return replies['What changed since yesterday?']+'\n\nNothing requires an emergency response, but the vendor invoice should be reviewed before approval.';
+    case 'insuranceEstimate': setContext('insurance','commercial insurance opportunity','insuranceEstimate','Request three competitive quotes before renewal.'); return 'The $18,300 estimate is based on current pricing being 18% above the peer benchmark, a 31-month gap since the last bid, and two potentially overlapping riders. Atlas uses a conservative achievable reduction rather than the full benchmark gap.';
+    case 'invoiceReview': setContext('invoice','flagged vendor invoice','invoiceReview','Match it to the purchase order before approving payment.'); return 'One vendor invoice is 22% above that vendor’s six-month average. It also includes an unusual freight surcharge. Atlas recommends verifying the purchase order and requesting supporting detail before payment.';
+    case 'insurance': setContext('insurance','commercial insurance opportunity','insurance','Request three competitive quotes before renewal.',{goal:'Lower renewal cost',annualImpact:18300,referents:['commercial insurance','renewal premium','policy riders'],confidence:96}); return 'Commercial insurance is the largest current opportunity. Premiums are 18% above the peer benchmark, no competitive rebid has occurred in 31 months, and Atlas estimates $18,300 in annual savings.\n\nThe first thing I would do is gather the current policy and loss runs.';
+    case 'processing': setContext('processing','merchant processing opportunity','processing','Calculate the blended rate and request repricing.',{goal:'Lower processing fees',annualImpact:14800,referents:['merchant processing fees','blended rate','processor markup'],confidence:95}); return 'Merchant processing is the second-largest opportunity. Effective fees increased 11% this quarter, creating an estimated $14,800 annual savings opportunity.\n\nI would calculate the blended rate before negotiating so you know exactly where the markup sits.';
+    case 'software': setContext('software','inactive software seats','software','Confirm ownership and cancel inactive seats before renewal.',{goal:'Reduce recurring software spend',annualImpact:7900,referents:['27 paid software seats','inactive licenses','overlapping software'],confidence:97}); return 'Atlas found 27 paid software seats with no activity in the last 90 days. Consolidating inactive or overlapping licenses could save about $7,900 annually, or approximately $658 per month.\n\nI would confirm ownership before removing any license.';
+    case 'freight': setContext('freight','freight savings opportunity','freight','Compare the west location’s top five lanes.',{goal:'Reduce west-location freight cost',annualImpact:5100,referents:['west-location freight','shipping lanes','carrier costs'],confidence:91}); return 'Freight costs at the west location are 12% above the company average. Atlas estimates $5,100 in annual savings through carrier comparison, lane consolidation, and contract review.';
+    case 'cash': setContext('cash','cash-flow position','cash','Continue monitoring; no intervention is needed today.'); return 'Cash on hand is $2.84 million. Atlas rates 90-day liquidity risk as low, and cash improved by $38,200 since yesterday.\n\nNo immediate cash-flow intervention is recommended.';
+    case 'vendor': setContext('vendor','vendor portfolio','vendor','Review the flagged invoice and highest-cost contracts.'); return 'Atlas reviewed 412 active vendors across three locations. The strongest vendor-related opportunities are insurance, merchant processing, software licensing, and freight. No concentration risk currently exceeds the demo alert threshold.';
+    case 'transaction': setContext('transaction','selected transaction','transaction','Open the transaction details and verify supporting documentation.'); return `I would evaluate that transaction against the vendor’s history, category pattern, duplicate risk, and benchmark variance. Open the transaction row for the specific evidence behind the flag.`;
+    case 'imports': setContext('imports','latest financial import','imports','Review warnings before the next upload.'); return 'The latest imports completed successfully: 9,842 records are available, no import errors require attention, and no duplicate import was detected.';
+    case 'billing': setContext('billing','Professional Plan billing','billing','No billing action is required today.'); return 'The Professional Plan is active at $299 per month. Usage is within plan limits, the next scheduled charge is August 29, 2026, and invoices are available on Payments & Billing.';
+    case 'settings': setContext('settings','Atlas settings','settings','Keep daily briefings and two-factor authentication enabled.'); return 'Daily CEO briefings, conversation memory, and owner two-factor authentication are enabled. You can change these controls on the Settings page.';
+    case 'revenue': setContext('revenue','annual revenue trend','revenue','Continue monitoring; no deterioration signal is present.'); return 'Annual revenue is $28.4 million in the demo workspace, up 6.4% year over year. The strongest contribution comes from the central location, while the west location is growing more slowly. No immediate top-line deterioration signal is present.';
+    case 'profitability': setContext('profitability','profitability and margins','profitability','Act on insurance and processing costs before broad cuts.'); return 'Gross margin is 31.6%, down 0.8 percentage points from the prior period. Revenue remains healthy; the pressure is concentrated in insurance, merchant processing, and west-location freight. Addressing the top two savings opportunities could recover a meaningful portion of the decline.';
+    case 'payroll': setContext('payroll','payroll and labor costs','payroll','Review overtime by department before changing headcount.'); return 'Payroll is 4.2% above the prior month. Most of the increase comes from overtime at the west location and two temporary roles moving to full-time status. Base wage expense remains close to plan.';
+    case 'taxes': setContext('taxes','tax obligations','taxes','Confirm filing dates with your tax professional.'); return 'The demo workspace shows no overdue tax item. Estimated payments and sales-tax obligations appear current, but Atlas should not replace your tax professional. The next step is to confirm filing dates and reconcile taxable sales before submission.';
+    case 'compliance': setContext('compliance','compliance status','compliance','Review the OSHA update and document ownership.'); return 'No critical compliance breach is shown in the demo data. One OSHA-related policy update should be reviewed, assigned to an owner, and documented before the next internal audit.';
+    case 'receivables': setContext('receivables','accounts receivable','receivables','Contact the three largest overdue accounts.'); return 'Accounts receivable totals $1.74 million, with $286,000 over 45 days. Three customers account for most of the aging. Collections are not yet a liquidity threat, but focused follow-up could improve cash conversion.';
+    case 'payables': setContext('payables','accounts payable','payables','Preserve discounts while avoiding early payments without benefit.'); return 'Accounts payable is within the normal range. Atlas found no immediate payment bottleneck. The best opportunity is to capture available early-payment discounts without paying suppliers early when no discount exists.';
+    case 'inventory': setContext('inventory','inventory position','inventory','Pause reorders on slow-moving SKUs.'); return 'Inventory totals $3.1 million. About $214,000 is slow-moving based on recent sales velocity. Atlas recommends pausing reorders for those SKUs and validating demand before using discounts.';
+    case 'debt': setContext('debt','debt and borrowing costs','debt','Review variable-rate exposure before refinancing.'); return 'Debt service is manageable in the demo workspace. The main watch item is variable-rate exposure on the operating line. A rate comparison may be worthwhile, but there is no current covenant or liquidity warning.';
+    case 'runway': setContext('runway','cash runway','runway','Continue monitoring; no immediate capital action is needed.'); return 'Based on current cash and the recent operating pattern, the demo company has more than 12 months of operating coverage. Because the company is cash-flow positive in this scenario, a traditional startup runway calculation is less useful than monitoring liquidity and collections.';
+    case 'forecast': setContext('forecast','financial forecast','forecast','Refresh the forecast after insurance quotes and collections updates.'); return 'The current outlook supports continued revenue growth with modest margin pressure. The biggest forecast variables are the insurance renewal, merchant processing costs, and collection timing on three large accounts.';
+    case 'budget': setContext('budget','budget performance','budget','Correct concentrated variances instead of broad cuts.'); return 'Overall spending is close to plan, but insurance, processing fees, and west-location freight are above budget. Payroll is modestly elevated due to overtime. Atlas recommends targeted corrections rather than across-the-board reductions.';
+    case 'locations': setContext('locations','location performance','locations','Review west-location freight and overtime.'); return 'The central location is the strongest contributor. The west location has two pressure points: freight cost per shipment is 12% above average and overtime is elevated. The east location is performing close to plan.';
+    case 'customers': setContext('customers','customer portfolio','customers','Monitor the three largest overdue accounts.'); return 'Customer concentration is within the demo alert threshold, but three larger accounts drive most receivable aging. Atlas sees a collections issue to manage, not a broad churn signal.';
+    case 'duplicate': setContext('duplicate','duplicate-payment review','duplicate','Verify invoice number, amount, and date before paying.'); return 'Atlas has not confirmed a duplicate payment in the demo data. One invoice deserves review because the amount and surcharge differ from the vendor’s normal pattern. Match invoice number, amount, purchase order, and payment status before approval.';
+    case 'anomalies': setContext('anomalies','financial anomalies','anomalies','Review the flagged invoice and west-location cost variances.'); return 'The most important anomalies are one vendor invoice 22% above its six-month average, west-location freight 12% above the company average, and elevated overtime. None is labeled fraud; each requires supporting-document review.';
+    case 'expenses': setContext('expenses','largest business expenses','expenses','Start with costs that are both large and negotiable.'); return 'The largest controllable cost areas in the demo are payroll, insurance, freight, merchant processing, and software. Payroll is largest overall, but insurance and processing offer the fastest near-term savings without reducing staff.';
+    case 'risk': setContext('risk','current business risks','risk','Address the insurance renewal before the deadline.'); return 'The highest current risk is the approaching insurance renewal at above-benchmark pricing. Secondary risks are receivable aging, west-location freight and overtime, and the flagged vendor invoice. Liquidity risk remains low.';
+    default: return `I understand the question, but I need a little more context to answer it responsibly. Are you asking about savings, revenue, profitability, payroll, cash flow, receivables, inventory, vendors, transactions, taxes, compliance, imports, billing, or risk?`;
+  }
+}
+
+function animateCounts(){
+  document.querySelectorAll('.count').forEach(el=>{
+    const target=Number(el.dataset.value);
+    const start=performance.now();
+    const duration=900;
+    function tick(now){
+      const progress=Math.min((now-start)/duration,1);
+      const eased=1-Math.pow(1-progress,3);
+      const value=Math.round(target*eased);
+      if(el.classList.contains('money')) el.textContent=money.format(value);
+      else if(el.classList.contains('percent')) el.textContent=`${value}%`;
+      else el.textContent=value.toLocaleString('en-US');
+      if(progress<1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+function followUpsFor(prompt){
+  const type=detectIntent(prompt).type;
+  const map={
+    insurance:['Show the $18,300 estimate','What should I do first?','Compare carriers'],
+    carriers:['Show the $18,300 estimate','Draft broker questions','What should I do first?'],
+    insuranceEstimate:['Compare carriers','Explain the top priority','Show all savings'],
+    invoiceReview:['Why was it flagged?','Is it a duplicate?','What should I do first?'],
+    savings:['Explain the top priority','Rank by fastest payoff','What changed since yesterday?'],
+    processing:['How was $14,800 calculated?','Show all savings','What should I do first?'],
+    cash:['What changed since yesterday?','Show financial risks','Explain cash flow'],
+    imports:['Did any imports fail?','How many records were added?','Review transactions'],
+    billing:['When is the next charge?','What does the plan include?','Show billing history'],
+    settings:['Which alerts are enabled?','Is two-factor active?','How does memory work?'],
+    transaction:['Why was it flagged?','Is it a duplicate?','Show related savings'],
+    profitability:['Why did margin decline?','What should I do next?','Show all savings'],
+    payroll:['Why did payroll rise?','What should I do next?','Compare locations'],
+    receivables:['Which customers are overdue?','What should I do next?','Explain cash flow'],
+    inventory:['What is slow-moving?','What should I do next?','Show business risks'],
+    forecast:['What could change the forecast?','What should I do next?','Show business risks'],
+    anomalies:['Why was it flagged?','What should I do next?','Is it a duplicate?'],
+    expenses:['Which cost can I reduce first?','Show all savings','Explain profitability']
+  };
+  return map[type]||['Show all savings','Explain the top priority','What changed since yesterday?'];
+}
+
+function renderFollowUps(prompt){
+  const row=document.querySelector('.quick-prompts');
+  if(!row) return;
+  row.innerHTML=followUpsFor(prompt).map(x=>`<button data-prompt="${x.replace(/"/g,'&quot;')}">${x}</button>`).join('');
+  row.querySelectorAll('[data-prompt]').forEach(b=>b.addEventListener('click',()=>answer(b.dataset.prompt)));
+}
+
+const COPILOT_STORAGE_KEY='atlasCopilotConversation24';
+const defaultCopilotMessage='I completed your executive review. Since your last login, I found four changes: insurance remains the largest savings opportunity, a new $5,100 freight opportunity appeared, cash improved by $38,200, and one vendor invoice needs review. Which should we examine first?';
+
+function escapeMessage(text){return String(text).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function loadConversation(){
+  try{const raw=localStorage.getItem(COPILOT_STORAGE_KEY)||localStorage.getItem('atlasCopilotConversation21_2_1')||'[]';const saved=JSON.parse(raw);return Array.isArray(saved)&&saved.length?saved:[{who:'atlas',text:defaultCopilotMessage}]}catch{return [{who:'atlas',text:defaultCopilotMessage}]}
+}
+function saveConversation(){
+  const items=[...document.querySelectorAll('#chat .message')].map(el=>({who:el.classList.contains('user')?'user':'atlas',text:el.querySelector('p')?.textContent||''}));
+  localStorage.setItem(COPILOT_STORAGE_KEY,JSON.stringify(items.slice(-20)));
+}
+function restoreConversation(){
+  const chat=document.querySelector('#chat'); if(!chat) return; chat.innerHTML='';
+  loadConversation().forEach(m=>addMessage(m.text,m.who,false));
+}
+function setGreeting(){
+  const h=new Date().getHours(); const part=h<12?'morning':h<17?'afternoon':'evening';
+  const el=document.querySelector('#dynamicGreeting'); if(el) el.textContent=`Good ${part}, Brian.`;
+}
+function addMessage(text, who='atlas', persist=true){
+  const chat=document.querySelector('#chat'); if(!chat) return;
+  const div=document.createElement('div'); div.className=`message ${who}`;
+  const safe=escapeMessage(text).replace(/\n/g,'<br>');
+  div.innerHTML=who==='atlas'?`<span>A</span><p>${safe}</p>`:`<p>${safe}</p><span>BH</span>`;
+  chat.appendChild(div); chat.scrollTop=chat.scrollHeight;
+  if(persist) saveConversation();
+}
+function updateMemoryIndicator(){
+  loadMemory();
+  const topic=document.querySelector('#topic');
+  if(topic) topic.textContent=conversationState.entity==='business overview'?'General business overview':conversationState.entity.replace(/^./,c=>c.toUpperCase());
+  const status=document.querySelector('#memoryStatus');
+  if(status) status.textContent=conversationState.turnCount?`${conversationState.turnCount} remembered ${conversationState.turnCount===1?'exchange':'exchanges'}`:'Conversation context ready';
+  const entity=document.querySelector('#contextEntity'); if(entity) entity.textContent=conversationState.entity==='business overview'?'Business overview':conversationState.entity.replace(/^./,c=>c.toUpperCase());
+  const goal=document.querySelector('#contextGoal'); if(goal) goal.textContent=conversationState.goal||'Review priorities';
+  const confidence=document.querySelector('#contextConfidence'); if(confidence) confidence.textContent=conversationState.confidence?`${conversationState.confidence}% context confidence`:'Context ready';
+}
+function openConversationHistory(){
+  const messages=loadConversation();
+  const body=messages.map((m,index)=>`<article class="history-message ${m.who}"><span>${m.who==='atlas'?'ATLAS':'YOU'} · ${String(index+1).padStart(2,'0')}</span><p>${escapeMessage(m.text).replace(/\n/g,'<br>')}</p></article>`).join('');
+  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 24.1 · CONTEXT INTELLIGENCE');
+}
+function answer(prompt){
+  loadMemory();
+  addMessage(prompt,'user');
+  const typing=document.querySelector('#typing'); typing?.classList.add('show');
+  setTimeout(()=>{
+    typing?.classList.remove('show');
+    const response=buildReply(prompt);
+    conversationState.lastQuestion=prompt;
+    conversationState.lastAnswer=response;
+    conversationState.turnCount=(Number(conversationState.turnCount)||0)+1;
+    saveMemory();
+    addMessage(response,'atlas');
+    updateMemoryIndicator();
+    renderFollowUps(prompt);
+  },450);
+}
+function openModal(title, body, eyebrow='EXECUTIVE BRIEF'){document.querySelector('#modalEyebrow').textContent=eyebrow;document.querySelector('#modalTitle').textContent=title;document.querySelector('#modalBody').innerHTML=body;document.querySelector('#modal').classList.add('open')}
+function statusLabel(status){return status==='in-progress'?'In progress':status==='completed'?'Completed':'Identified'}
+function renderActionSummary(){const el=document.querySelector('#actionTrackerSummary');if(!el)return;const s=actionSummary();el.innerHTML=`<div class="section-head"><div><span class="micro">SPRINT 23 · EXECUTIVE ACTION TRACKER</span><h2>Move opportunities into measurable results</h2></div><button class="outline" id="openActionCenter">Manage actions</button></div><div class="action-summary-grid"><article><span>IN PROGRESS</span><strong>${s.inProgress}</strong><small>Executive actions underway</small></article><article><span>COMPLETED</span><strong>${s.completed}</strong><small>Actions closed</small></article><article><span>REALIZED SAVINGS</span><strong>${money.format(s.realized)}</strong><small>Confirmed annual value</small></article><article><span>IDENTIFIED VALUE</span><strong>${money.format(s.identified)}</strong><small>Tracked opportunity total</small></article></div>`;document.querySelector('#openActionCenter')?.addEventListener('click',openActionTracker)}
+function openActionTracker(){const s=actionSummary();openModal('Executive Action Tracker',`<div class="tracker-toolbar"><p>Assign owners, advance status, and record savings after results are verified.</p><button class="outline" id="resetActions">Reset demo actions</button></div><div class="tracker-list">${s.actions.map(a=>`<article class="tracker-item"><div><span class="tracker-status ${a.status}">${statusLabel(a.status)}</span><h3>${a.title}</h3><small>${money.format(a.impact)} identified · Owner: ${a.owner} · Due: ${a.due}</small></div><div class="tracker-controls"><select data-action-status="${a.id}"><option value="identified" ${a.status==='identified'?'selected':''}>Identified</option><option value="in-progress" ${a.status==='in-progress'?'selected':''}>In progress</option><option value="completed" ${a.status==='completed'?'selected':''}>Completed</option></select><input type="number" min="0" step="100" value="${a.realized||''}" placeholder="Realized savings" data-action-realized="${a.id}"><button class="gold" data-save-action="${a.id}">Save</button></div></article>`).join('')}</div><div class="tracker-total"><span>Verified realized savings</span><strong>${money.format(s.realized)}</strong></div>`,'SPRINT 23 · EXECUTIVE EXECUTION');setTimeout(()=>{document.querySelectorAll('[data-save-action]').forEach(btn=>btn.addEventListener('click',()=>{const actions=loadActions();const item=actions.find(a=>a.id===btn.dataset.saveAction);if(!item)return;item.status=document.querySelector(`[data-action-status="${item.id}"]`).value;item.realized=Number(document.querySelector(`[data-action-realized="${item.id}"]`).value)||0;if(item.status==='completed'&&!item.realized)item.realized=item.impact;saveActions(actions);document.querySelector('#modal').classList.remove('open');renderActionSummary();toast(`${item.title} updated`)}));document.querySelector('#resetActions')?.addEventListener('click',()=>{saveActions(structuredClone(defaultActions));document.querySelector('#modal').classList.remove('open');renderActionSummary();toast('Action tracker reset')})},0)}
+function toast(msg){const t=document.querySelector('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)}
+
+function bindDashboard(){
+  renderActionSummary();
+  document.querySelector('#actionTrackerBtn')?.addEventListener('click',openActionTracker);
+  animateCounts();
+  setGreeting();
+  restoreConversation();
+  updateMemoryIndicator();
+  document.querySelectorAll('[data-prompt]').forEach(b=>b.addEventListener('click',()=>answer(b.dataset.prompt)));
+  document.querySelector('#chatForm')?.addEventListener('submit',e=>{e.preventDefault();const i=document.querySelector('#chatInput');const v=i.value.trim();if(v){answer(v);i.value=''}});
+  document.querySelector('#historyBtn')?.addEventListener('click',openConversationHistory);
+  document.querySelector('#newChat')?.addEventListener('click',()=>{localStorage.removeItem(COPILOT_STORAGE_KEY);resetMemory();document.querySelector('#chat').innerHTML='';addMessage('New conversation started. I still have the current executive data available. What would you like to review?','atlas');updateMemoryIndicator();renderFollowUps('')});
+  document.querySelector('#reviewChangesBtn')?.addEventListener('click',()=>answer('What changed since yesterday?'));
+  document.querySelector('#askBtn')?.addEventListener('click',()=>{document.querySelector('#atlasPanel').scrollIntoView({behavior:'smooth',block:'start'});document.querySelector('#chatInput').focus()});
+  document.querySelector('#briefBtn')?.addEventListener('click',()=>openModal('Tonight’s Executive Brief',`<div class="brief-grid"><article><span>Financial health</span><strong>92</strong><small>Healthy</small></article><article><span>Annual savings</span><strong>$46,100</strong><small>4 opportunities</small></article><article><span>Top priority</span><strong>Insurance review</strong><small>$18,300 potential</small></article></div><p>Atlas recommends beginning the commercial insurance review first, followed by merchant processing. Cash flow remains healthy and no immediate liquidity risk was detected.</p>`));
+  document.querySelectorAll('.priority-row').forEach(row=>row.addEventListener('click',()=>{const p=priorities[Number(row.dataset.priority)];openModal(p.title,`<p>${p.detail}</p><div class="detail-box"><span>Estimated annual impact</span><strong>${p.savings?money.format(p.savings):'Positive operating trend'}</strong></div><div class="modal-button-row"><button class="gold modal-action" id="trackThis">Track this action</button><button class="outline modal-action" id="askThis">Ask Atlas about this</button></div>`,'ATLAS INVESTIGATION');setTimeout(()=>{document.querySelector('#askThis')?.addEventListener('click',()=>{document.querySelector('#modal').classList.remove('open');answer(`Explain ${p.title}`)});document.querySelector('#trackThis')?.addEventListener('click',()=>{document.querySelector('#modal').classList.remove('open');openActionTracker()})},0)}));
+}
+
+function showPage(name){
+  const main=document.querySelector('#mainPage');
+  if(!main) return;
+  const target=name==='Dashboard'?'Dashboard':(pageTemplates[name]?name:'Settings');
+  document.querySelectorAll('.sidebar-nav [data-nav]').forEach(x=>x.classList.toggle('active',x.dataset.nav===target));
+  if(target==='Dashboard'){
+    main.innerHTML=dashboardHTML;
+    bindDashboard();
+  }else{
+    main.innerHTML=pageTemplates[target];
+    bindFunctionalPage(target);
+  }
+  document.querySelector('.sidebar')?.classList.remove('open');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function downloadFile(filename, content, type='text/plain;charset=utf-8'){
+  const blob=new Blob([content],{type});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url; link.download=filename; document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),500);
+}
+
+function exportTransactionsCSV(){
+  const rows=[...document.querySelectorAll('#transactionsTable tr')]
+    .filter(row=>row.closest('thead') || row.style.display!=='none')
+    .map(row=>[...row.querySelectorAll('th,td')].map(cell=>`"${cell.textContent.trim().replace(/"/g,'""')}"`).join(','));
+  downloadFile('atlas-transactions-2026-07-30.csv',rows.join('\r\n'),'text/csv;charset=utf-8');
+  toast('Transactions exported to CSV');
+}
+
+function invoiceHTML(invoice='INV-2026-008', date='August 29, 2026'){
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${invoice}</title><style>body{font-family:Arial,sans-serif;max-width:760px;margin:48px auto;color:#172235}header{display:flex;justify-content:space-between;border-bottom:2px solid #caa85e;padding-bottom:18px}.brand{font-size:28px;font-weight:800}.muted{color:#687386}.box{margin-top:32px;padding:24px;background:#f5f7fa;border-radius:12px}.line{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #dce2ea}.total{font-size:24px;font-weight:800}.paid{color:#19764d;font-weight:700}</style></head><body><header><div><div class="brand">ATLAS AI</div><div class="muted">SmartLedger</div></div><div><strong>INVOICE</strong><div>${invoice}</div></div></header><div class="box"><div><strong>Bill to</strong><p>Atlas Manufacturing Group<br>Demo Workspace</p></div><div class="line"><span>Professional Plan — monthly subscription</span><span>$299.00</span></div><div class="line"><span>Invoice date</span><span>${date}</span></div><div class="line total"><span>Total</span><span>$299.00</span></div><p class="paid">Paid / scheduled by Visa ending 4321</p></div><p class="muted">This is a demonstration invoice generated by Atlas AI Sprint 23.</p></body></html>`;
+}
+
+function handleBillingAction(action){
+  if(action==='Upgrade plan'){
+    openModal('Choose your SmartLedger plan',`<div class="brief-grid"><article><span>ESSENTIAL</span><strong>$149/mo</strong><small>1 company · 3 users</small></article><article><span>PROFESSIONAL</span><strong>$299/mo</strong><small>3 companies · 10 users</small></article><article><span>ENTERPRISE</span><strong>Custom</strong><small>Unlimited scale</small></article></div><p>Your current Professional Plan is highlighted. Plan changes are demonstrated here and will connect to secure checkout in production.</p><button class="gold modal-action" id="confirmUpgrade">Select Enterprise</button>`,'PLAN MANAGEMENT');
+    setTimeout(()=>document.querySelector('#confirmUpgrade')?.addEventListener('click',()=>{document.querySelector('#modal').classList.remove('open');toast('Enterprise plan selected for review')}),0);
+    return;
+  }
+  if(action==='Update payment method'){
+    openModal('Update payment method',`<div class="payment-form"><label>Cardholder name<input id="cardName" value="Brian Hess"></label><label>Card number<input id="cardNumber" value="•••• •••• •••• 4321"></label><div class="form-row"><label>Expiration<input value="04/29"></label><label>Security code<input value="•••"></label></div><button class="gold modal-action" id="savePayment">Save payment method</button></div><p class="form-note">Demo only. No payment information is transmitted or stored.</p>`,'SECURE BILLING');
+    setTimeout(()=>document.querySelector('#savePayment')?.addEventListener('click',()=>{document.querySelector('#modal').classList.remove('open');toast('Payment method updated')}),0);
+    return;
+  }
+  if(action==='Download next invoice'){
+    downloadFile('Atlas-Invoice-INV-2026-008.html',invoiceHTML(),'text/html;charset=utf-8');
+    toast('Next invoice downloaded');
+    return;
+  }
+  if(action.startsWith('Download INV-')){
+    const invoice=action.replace('Download ','');
+    const dates={'INV-2026-007':'July 29, 2026','INV-2026-006':'June 29, 2026','INV-2026-005':'May 29, 2026'};
+    downloadFile(`Atlas-Invoice-${invoice}.html`,invoiceHTML(invoice,dates[invoice]||'2026'),'text/html;charset=utf-8');
+    toast(`${invoice} downloaded`);
+  }
+}
+
+
+const pageIntelligence = {
+  'Financial Imports': ['3 recent imports completed successfully.', '9,842 records are available for analysis.', 'No import errors require attention.'],
+  'Transactions': ['Two transactions are marked for review.', 'Merchant processing contains a $14,800 annual savings opportunity.', 'Insurance is the highest-impact category today.'],
+  'Import History': ['All 12 imports completed successfully.', 'The latest operating-account import added 4,281 records.', 'No duplicate import was detected.'],
+  'Payments & Billing': ['Professional Plan is active.', 'Current usage is within plan limits.', 'The next scheduled charge is $299 on August 29, 2026.'],
+  'Settings': ['Daily CEO briefings are enabled.', 'Conversation context memory is enabled.', 'Two-factor authentication is active for the owner account.']
+};
+
+function askAtlasAboutPage(name){
+  const insights=pageIntelligence[name]||['Atlas has reviewed this workspace.'];
+  openModal(`Atlas analysis: ${name}`, `<p>Atlas understands the page you are viewing and has prepared these immediate observations:</p><div class="context-insights">${insights.map((x,i)=>`<article><span>0${i+1}</span><strong>${x}</strong></article>`).join('')}</div><button class="gold modal-action" id="continueContextChat">Continue with Atlas</button>`, 'CONTEXTUAL INTELLIGENCE');
+  setTimeout(()=>document.querySelector('#continueContextChat')?.addEventListener('click',()=>{
+    document.querySelector('#modal').classList.remove('open');
+    showPage('Dashboard');
+    setTimeout(()=>{document.querySelector('#atlasPanel')?.scrollIntoView({behavior:'smooth',block:'start'});answer(`Review the ${name} page for me`)},50);
+  }),0);
+}
+
+function inspectTransaction(row){
+  const cells=[...row.querySelectorAll('td')].map(x=>x.textContent.trim());
+  const [vendor,date,category,amount,status]=cells;
+  const notes=status==='Opportunity'?'Atlas detected above-benchmark fees and recommends a pricing review.':status==='Review'?'This item differs from the expected category pattern and should be verified.':'This transaction matches normal historical behavior.';
+  openModal(vendor, `<div class="brief-grid"><article><span>AMOUNT</span><strong>${amount}</strong><small>${date}</small></article><article><span>CATEGORY</span><strong>${category}</strong><small>Imported ledger</small></article><article><span>STATUS</span><strong>${status}</strong><small>Atlas classification</small></article></div><p>${notes}</p><button class="gold modal-action" id="askTransaction">Ask Atlas about this transaction</button>`, 'TRANSACTION INTELLIGENCE');
+  setTimeout(()=>document.querySelector('#askTransaction')?.addEventListener('click',()=>{document.querySelector('#modal').classList.remove('open');showPage('Dashboard');setTimeout(()=>answer(`Explain the ${vendor} transaction for ${amount}`),50)}),0);
+}
+
+function bindFunctionalPage(name){
+  document.querySelectorAll('.ask-page').forEach(b=>b.addEventListener('click',()=>askAtlasAboutPage(b.dataset.page)));
+  document.querySelectorAll('.transaction-row').forEach(r=>r.addEventListener('click',()=>inspectTransaction(r)));
+  document.querySelectorAll('[data-import]').forEach(b=>b.addEventListener('click',()=>openModal(`Import ${b.dataset.import}`,`<p>Selecting a real file will be connected in the production data-integration phase. This demo confirms the complete import workflow and interface.</p><button class="gold modal-action" id="simulateImport">Simulate successful import</button>`,'FINANCIAL IMPORT')));
+  document.addEventListener('click',e=>{if(e.target?.id==='simulateImport'){document.querySelector('#modal').classList.remove('open');toast('Demo import completed successfully')}} ,{once:true});
+  const search=document.querySelector('#transactionSearch'); const filter=document.querySelector('#transactionFilter');
+  function filterRows(){const q=(search?.value||'').toLowerCase();const f=filter?.value||'All categories';document.querySelectorAll('#transactionsTable tbody tr').forEach(r=>{const txt=r.textContent.toLowerCase();r.style.display=txt.includes(q)&&(f==='All categories'||txt.includes(f.toLowerCase()))?'':'none'})}
+  search?.addEventListener('input',filterRows);filter?.addEventListener('change',filterRows);
+  document.querySelector('#exportTransactions')?.addEventListener('click',exportTransactionsCSV);
+  document.querySelectorAll('.billing-action').forEach(b=>b.addEventListener('click',()=>handleBillingAction(b.dataset.billing)));
+  document.querySelector('#saveSettings')?.addEventListener('click',()=>toast('Settings saved'));
+  document.querySelectorAll('.settings-action').forEach(b=>b.addEventListener('click',()=>toast(`${b.textContent} opened`)));
+}
+
+function signOut(){
+  sessionStorage.removeItem('atlasSession');
+  app.innerHTML=`<div class="signed-out"><section class="signin-card"><span class="brand-mark large">A</span><span class="micro">ATLAS AI · SMARTLEDGER</span><h1>You are signed out.</h1><p>Choose how you would like to enter Atlas AI. Demo mode will never open automatically.</p><button class="gold" id="demoEntry">Enter demo workspace</button><button class="outline" id="accountEntry">Sign in to an account</button><small>Sprint 24.1 · Secure session cleared</small></section></div>`;
+  document.querySelector('#demoEntry').addEventListener('click',()=>location.reload());
+  document.querySelector('#accountEntry').addEventListener('click',()=>{document.querySelector('.signin-card').innerHTML=`<span class="brand-mark large">A</span><span class="micro">SECURE ACCOUNT ACCESS</span><h1>Sign in</h1><label class="signin-label">Email<input type="email" placeholder="you@company.com"></label><label class="signin-label">Password<input type="password" placeholder="••••••••"></label><button class="gold" id="signinSubmit">Sign in</button><button class="outline" id="backChoice">Back</button>`;document.querySelector('#signinSubmit').addEventListener('click',()=>toast('Account authentication will connect during production setup'));document.querySelector('#backChoice').addEventListener('click',()=>location.reload())});
+}
+
+bindDashboard();
+// Scope navigation to the sidebar and delegate clicks so it remains reliable
+// after dashboard content is replaced and restored.
+document.querySelector('.sidebar-nav')?.addEventListener('click',event=>{
+  const button=event.target.closest('[data-nav]');
+  if(!button) return;
+  showPage(button.dataset.nav);
+});
+document.querySelector('.signout')?.addEventListener('click',signOut);
+document.querySelector('#reloadBtn').addEventListener('click',()=>{if(document.querySelector('.count'))animateCounts();toast('Demo data reloaded')});
+document.querySelector('#presentationBtn').addEventListener('click',()=>{document.body.classList.toggle('presentation');toast(document.body.classList.contains('presentation')?'Presentation mode on':'Presentation mode off')});
+document.querySelector('#modalClose').addEventListener('click',()=>document.querySelector('#modal').classList.remove('open'));
+document.querySelector('#modal').addEventListener('click',e=>{if(e.target.id==='modal')e.currentTarget.classList.remove('open')});
