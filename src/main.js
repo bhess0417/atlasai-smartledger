@@ -64,7 +64,7 @@ app.innerHTML = `
       <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name">Atlas AI Demo Company⌄</button></div>
       <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
-        <span class="release">ATLAS 26 · CONVERSATION INTELLIGENCE</span>
+        <span class="release">ATLAS 27 · BUSINESS MEMORY</span>
         <div class="profile"><span>BH</span><div><strong>Brian Hess</strong><small>Owner</small></div></div>
       </div>
     </header>
@@ -147,7 +147,7 @@ app.innerHTML = `
 
         <aside class="atlas-panel" id="atlasPanel">
           <header><div class="atlas-title"><span class="atlas-logo">A</span><div><span>ATLAS · EXECUTIVE COPILOT</span><h2>Ask Atlas</h2><small>Proactive briefings, follow-ups, and remembered context.</small></div></div><div class="copilot-status"><span class="ready-pill green">● READY</span><span class="memory-pill">● MEMORY ON</span></div></header>
-          <div class="topic-row"><div><span>CURRENT TOPIC</span><strong id="topic">General business overview</strong><small id="memoryStatus">Conversation context ready</small><div class="context-chips"><span id="contextEntity">Business overview</span><span id="contextGoal">Review priorities</span><span id="contextConfidence">Context ready</span></div></div><div class="topic-actions"><button id="historyBtn">History</button><button id="newChat">New chat</button></div></div>
+          <div class="topic-row"><div><span>CURRENT TOPIC</span><strong id="topic">General business overview</strong><small id="memoryStatus">Conversation context ready</small><div class="context-chips"><span id="contextEntity">Business overview</span><span id="contextGoal">Review priorities</span><span id="contextConfidence">Context ready</span></div></div><div class="topic-actions"><button id="businessMemoryBtn">Business memory</button><button id="historyBtn">History</button><button id="newChat">New chat</button></div></div>
           <div class="copilot-brief" id="copilotBrief"><span class="micro">SINCE YOUR LAST LOGIN</span><strong>4 executive changes detected</strong><small>Insurance renewal risk, new freight savings, stronger cash, and one invoice review.</small><button class="ghost" id="reviewChangesBtn">Review changes</button></div>
           <div class="chat" id="chat"></div>
           <div class="typing" id="typing"><span></span><span></span><span></span><em>Atlas is analyzing…</em></div>
@@ -203,7 +203,7 @@ const pageTemplates = {
 
   'Settings': `
     <section class="page-heading"><div><span class="micro">WORKSPACE CONTROLS</span><h1>Settings</h1><p>Configure executive briefings, security, and Atlas memory.</p></div><button class="outline ask-page" data-page="Settings">Ask Atlas about settings</button></section>
-    <section class="panel settings-panel"><div class="setting-row"><div><strong>Daily CEO briefing</strong><span>Prepare an executive summary each morning.</span></div><label class="switch"><input type="checkbox" checked><span></span></label></div><div class="setting-row"><div><strong>Atlas conversation memory</strong><span>Keep context for natural follow-up questions.</span></div><label class="switch"><input type="checkbox" checked><span></span></label></div><div class="setting-row"><div><strong>Executive notifications</strong><span>Alert the owner when a high-impact item changes.</span></div><label class="switch"><input type="checkbox" checked><span></span></label></div><div class="setting-row"><div><strong>Two-factor authentication</strong><span>Active for the owner account.</span></div><button class="outline settings-action">Manage security</button></div><button class="gold" id="saveSettings">Save settings</button></section>`
+    <section class="panel settings-panel"><div class="setting-row"><div><strong>Daily CEO briefing</strong><span>Prepare an executive summary each morning.</span></div><label class="switch"><input type="checkbox" checked><span></span></label></div><div class="setting-row"><div><strong>Atlas conversation memory</strong><span>Keep session context plus company priorities and decisions across visits.</span></div><label class="switch"><input type="checkbox" checked><span></span></label></div><div class="setting-row"><div><strong>Executive notifications</strong><span>Alert the owner when a high-impact item changes.</span></div><label class="switch"><input type="checkbox" checked><span></span></label></div><div class="setting-row"><div><strong>Two-factor authentication</strong><span>Active for the owner account.</span></div><button class="outline settings-action">Manage security</button></div><button class="gold" id="saveSettings">Save settings</button></section>`
 };
 
 const replies = {
@@ -213,7 +213,50 @@ const replies = {
   'What changed since yesterday?': 'Since yesterday, merchant processing fees increased 0.4%, cash on hand improved by $38,200, one new freight savings opportunity was identified, and no new liquidity risk was detected.'
 };
 
-const MEMORY_KEY='atlasNaturalConversation26';
+const MEMORY_KEY='atlasNaturalConversation27';
+const COMPANY_MEMORY_KEY='atlasCompanyMemory27';
+
+const defaultCompanyMemory={
+  company:'Atlas Manufacturing Group',
+  owner:'Brian Hess',
+  priorities:['Reduce recurring operating costs','Protect cash flow','Turn Atlas findings into completed actions'],
+  recurringIssues:['Commercial insurance renewal','Merchant-processing fees','Inactive software seats','Freight surcharges'],
+  decisions:[{date:'Current demo',text:'Review commercial insurance first because it has the highest modeled impact.'}],
+  preferences:['Lead with the key takeaway','Show annual and monthly impact','End with a recommended next action'],
+  lastSessionSummary:'The CEO reviewed savings priorities and asked Atlas to maintain conversational context.',
+  updatedAt:new Date().toISOString()
+};
+let companyMemory=loadCompanyMemory();
+function loadCompanyMemory(){
+  try{const saved=JSON.parse(localStorage.getItem(COMPANY_MEMORY_KEY)||'null');return saved&&typeof saved==='object'?{...structuredClone(defaultCompanyMemory),...saved}:structuredClone(defaultCompanyMemory)}catch{return structuredClone(defaultCompanyMemory)}
+}
+function saveCompanyMemory(){companyMemory.updatedAt=new Date().toISOString();localStorage.setItem(COMPANY_MEMORY_KEY,JSON.stringify(companyMemory));}
+function rememberBusinessItem(type,text){
+  const clean=String(text||'').trim(); if(!clean) return;
+  const key=type==='decision'?'decisions':type==='priority'?'priorities':type==='issue'?'recurringIssues':'preferences';
+  if(key==='decisions') companyMemory.decisions=[{date:new Date().toLocaleDateString(),text:clean},...(companyMemory.decisions||[]).filter(x=>x.text!==clean)].slice(0,12);
+  else companyMemory[key]=[clean,...(companyMemory[key]||[]).filter(x=>x!==clean)].slice(0,12);
+  saveCompanyMemory();
+}
+function companyMemorySummary(){
+  const priority=(companyMemory.priorities||[])[0]||'Review priorities';
+  const issue=(companyMemory.recurringIssues||[])[0]||'No recurring issue saved';
+  const decision=(companyMemory.decisions||[])[0]?.text||'No prior decision saved';
+  return `I remember ${companyMemory.company}. Current priority: ${priority}. Recurring issue: ${issue}. Most recent decision: ${decision}`;
+}
+function openBusinessMemory(){
+  const list=(title,items,mapper=x=>x)=>`<h3>${title}</h3><ul>${(items||[]).map(x=>`<li>${mapper(x)}</li>`).join('')||'<li>Nothing saved yet.</li>'}</ul>`;
+  const body=`<div class="business-memory-modal"><p>${companyMemorySummary()}</p>${list('Executive priorities',companyMemory.priorities)}${list('Recurring issues',companyMemory.recurringIssues)}${list('Prior decisions',companyMemory.decisions,x=>`${x.date}: ${x.text}`)}${list('Response preferences',companyMemory.preferences)}<p class="memory-updated">Updated ${new Date(companyMemory.updatedAt).toLocaleString()}</p></div>`;
+  openModal('Atlas Business Memory',body,'SPRINT 27 · BUSINESS MEMORY');
+}
+function parseMemoryCommand(prompt){
+  const raw=String(prompt||'').trim();
+  let m=raw.match(/^(?:remember|note|save)\s+(?:that\s+)?(.+)/i);
+  if(m){rememberBusinessItem(/decision|decided|choose|chose/i.test(m[1])?'decision':/priority|focus|goal/i.test(m[1])?'priority':/issue|problem|risk/i.test(m[1])?'issue':'preference',m[1]);return `Saved to business memory: ${m[1]}`;}
+  if(/what do you remember|business memory|remember about (?:the )?company/i.test(raw)) return companyMemorySummary();
+  return '';
+}
+
 const conversationState={topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0,summary:'',recentTopics:[],lastQuestions:[]};
 
 function loadMemory(){
@@ -526,7 +569,7 @@ function updateMemoryIndicator(){
   const topic=document.querySelector('#topic');
   if(topic) topic.textContent=conversationState.entity==='business overview'?'General business overview':conversationState.entity.replace(/^./,c=>c.toUpperCase());
   const status=document.querySelector('#memoryStatus');
-  if(status) status.textContent=conversationState.turnCount?`${conversationState.turnCount} remembered ${conversationState.turnCount===1?'exchange':'exchanges'}`:'Conversation context ready';
+  if(status) status.textContent=conversationState.turnCount?`${conversationState.turnCount} session exchanges · company memory retained`:'Company memory ready across visits';
   const entity=document.querySelector('#contextEntity'); if(entity) entity.textContent=conversationState.entity==='business overview'?'Business overview':conversationState.entity.replace(/^./,c=>c.toUpperCase());
   const goal=document.querySelector('#contextGoal'); if(goal) goal.textContent=conversationState.goal||'Review priorities';
   const confidence=document.querySelector('#contextConfidence'); if(confidence) confidence.textContent=conversationState.confidence?`${conversationState.confidence}% context confidence`:'Context ready';
@@ -534,18 +577,21 @@ function updateMemoryIndicator(){
 function openConversationHistory(){
   const messages=loadConversation();
   const body=messages.map((m,index)=>`<article class="history-message ${m.who}"><span>${m.who==='atlas'?'ATLAS':'YOU'} · ${String(index+1).padStart(2,'0')}</span><p>${escapeMessage(m.text).replace(/\n/g,'<br>')}</p></article>`).join('');
-  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 26 · CONVERSATION INTELLIGENCE');
+  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 27 · BUSINESS MEMORY');
 }
 function answer(prompt){
   loadMemory();
+  companyMemory=loadCompanyMemory();
   addMessage(prompt,'user');
   const typing=document.querySelector('#typing'); typing?.classList.add('show');
   setTimeout(()=>{
     typing?.classList.remove('show');
-    const response=buildReply(prompt);
+    const memoryCommand=parseMemoryCommand(prompt);
+    const response=memoryCommand||buildReply(prompt);
     conversationState.lastQuestion=prompt;
     rememberQuestion(prompt);
     conversationState.lastAnswer=response;
+    companyMemory.lastSessionSummary=`Discussed ${conversationState.entity}. Latest question: ${prompt}. Latest recommendation: ${conversationState.recommendation}`; saveCompanyMemory();
     conversationState.turnCount=(Number(conversationState.turnCount)||0)+1;
     saveMemory();
     addMessage(response,'atlas');
@@ -581,8 +627,9 @@ function bindDashboard(){
   updateMemoryIndicator();
   document.querySelectorAll('[data-prompt]').forEach(b=>b.addEventListener('click',()=>answer(b.dataset.prompt)));
   document.querySelector('#chatForm')?.addEventListener('submit',e=>{e.preventDefault();const i=document.querySelector('#chatInput');const v=i.value.trim();if(v){answer(v);i.value=''}});
+  document.querySelector('#businessMemoryBtn')?.addEventListener('click',openBusinessMemory);
   document.querySelector('#historyBtn')?.addEventListener('click',openConversationHistory);
-  document.querySelector('#newChat')?.addEventListener('click',()=>{localStorage.removeItem(COPILOT_STORAGE_KEY);resetMemory();document.querySelector('#chat').innerHTML='';addMessage('New conversation started. I still have the current executive data available. Ask naturally—I will keep the thread for the full session.','atlas');updateMemoryIndicator();renderFollowUps('')});
+  document.querySelector('#newChat')?.addEventListener('click',()=>{localStorage.removeItem(COPILOT_STORAGE_KEY);resetMemory();document.querySelector('#chat').innerHTML='';addMessage('New conversation started. Session chat was cleared, but Atlas retained the company priorities, recurring issues, and prior decisions in Business Memory.','atlas');updateMemoryIndicator();renderFollowUps('')});
   document.querySelector('#reviewChangesBtn')?.addEventListener('click',()=>answer('What changed since yesterday?'));
   document.querySelector('#askBtn')?.addEventListener('click',()=>{document.querySelector('#atlasPanel').scrollIntoView({behavior:'smooth',block:'start'});document.querySelector('#chatInput').focus()});
   document.querySelector('#briefBtn')?.addEventListener('click',()=>openModal('Tonight’s Executive Brief',`<div class="brief-grid"><article><span>Financial health</span><strong>92</strong><small>Healthy</small></article><article><span>Annual savings</span><strong>$46,100</strong><small>4 opportunities</small></article><article><span>Top priority</span><strong>Insurance review</strong><small>$18,300 potential</small></article></div><p>Atlas recommends beginning the commercial insurance review first, followed by merchant processing. Cash flow remains healthy and no immediate liquidity risk was detected.</p>`));
