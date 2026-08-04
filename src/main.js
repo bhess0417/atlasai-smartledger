@@ -64,7 +64,7 @@ app.innerHTML = `
       <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name">Atlas AI Demo Company⌄</button></div>
       <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
-        <span class="release">ATLAS 25 · CEO COMMAND CENTER</span>
+        <span class="release">ATLAS 26 · CONVERSATION INTELLIGENCE</span>
         <div class="profile"><span>BH</span><div><strong>Brian Hess</strong><small>Owner</small></div></div>
       </div>
     </header>
@@ -74,7 +74,7 @@ app.innerHTML = `
     <main class="page" id="mainPage">
       <section class="welcome-card">
         <div>
-          <span class="micro">ATLAS EXECUTIVE COMMAND CENTER · SPRINT 25</span>
+          <span class="micro">ATLAS CONVERSATION INTELLIGENCE · SPRINT 26</span>
           <h1 id="dynamicGreeting">Good afternoon, Brian.</h1>
           <p>Atlas completed your executive review and prepared the changes that need your attention.</p>
           <div class="welcome-actions"><button class="gold" id="briefBtn">View executive brief</button><button class="ghost" id="actionTrackerBtn">Open action tracker</button><button class="ghost" id="askBtn">Ask Atlas</button></div>
@@ -213,15 +213,15 @@ const replies = {
   'What changed since yesterday?': 'Since yesterday, merchant processing fees increased 0.4%, cash on hand improved by $38,200, one new freight savings opportunity was identified, and no new liquidity risk was detected.'
 };
 
-const MEMORY_KEY='atlasNaturalConversation24_1';
-const conversationState={topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0};
+const MEMORY_KEY='atlasNaturalConversation26';
+const conversationState={topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0,summary:'',recentTopics:[],lastQuestions:[]};
 
 function loadMemory(){
   try{const saved=localStorage.getItem(MEMORY_KEY)||localStorage.getItem('atlasNaturalConversation24')||localStorage.getItem('atlasNaturalConversation21_2_1')||'{}';Object.assign(conversationState,JSON.parse(saved));}catch{}
 }
 function saveMemory(){localStorage.setItem(MEMORY_KEY,JSON.stringify(conversationState));}
 function resetMemory(){
-  Object.assign(conversationState,{topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0});
+  Object.assign(conversationState,{topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0,summary:'',recentTopics:[],lastQuestions:[]});
   localStorage.removeItem(MEMORY_KEY);
 }
 function setContext(topic,entity,intent,recommendation='',details={}){
@@ -233,12 +233,16 @@ function setContext(topic,entity,intent,recommendation='',details={}){
   conversationState.annualImpact=Number(details.annualImpact??conversationState.annualImpact)||0;
   conversationState.referents=Array.isArray(details.referents)?details.referents:conversationState.referents||[];
   conversationState.confidence=Number(details.confidence??conversationState.confidence)||0;
+  conversationState.recentTopics=[topic,...(conversationState.recentTopics||[]).filter(x=>x!==topic)].slice(0,6);
+  conversationState.summary=`Discussing ${conversationState.entity}; goal: ${conversationState.goal}; next step: ${conversationState.recommendation}`;
   saveMemory();
 }
 function isFollowUp(q){
   const clean=String(q||'').trim();
-  return /^(why|how|tell me more|explain (it|that|this)|what next|what should i do next|what do you recommend|compare (it|them|those)|draft (an )?email|do that|which one|is that important|how much|what caused it)[?.!]*$/i.test(clean)
-    || /\b(it|this|that|these|those|them|they|one|ones|each)\b/i.test(clean);
+  if(!clean) return false;
+  return /^(why|how|when|where|who|what about|tell me more|go deeper|keep going|continue|explain|explain (it|that|this)|what next|what should i do next|what do you recommend|compare|compare (it|them|those)|draft (an )?email|do that|which one|is that important|how much|what caused it|and then|what else)[?.!]*$/i.test(clean)
+    || /\b(it|this|that|these|those|them|they|one|ones|each|same|previous|above|former|latter)\b/i.test(clean)
+    || (clean.split(/\s+/).length<=7 && conversationState.topic!=='general');
 }
 function monthlyImpact(){return Math.round((Number(conversationState.annualImpact)||0)/12);}
 function contextualAmountReply(prompt){
@@ -252,6 +256,39 @@ function contextualAmountReply(prompt){
   const descriptions={software:'the 27 inactive or overlapping software seats',insurance:'the commercial insurance opportunity',processing:'the merchant-processing opportunity',freight:'the freight opportunity'};
   const subject=descriptions[topic]||conversationState.entity;
   return `The modeled impact for ${subject} is approximately ${amount} ${period}${monthly?` (${money.format(annual)} annually ÷ 12)`:''}. For software, that is the potential cost tied to inactive or overlapping licenses—not the company’s entire software bill.`;
+}
+
+
+function rememberQuestion(prompt){
+  const q=String(prompt||'').trim();
+  conversationState.lastQuestions=[q,...(conversationState.lastQuestions||[]).filter(x=>x!==q)].slice(0,12);
+  conversationState.summary=`${conversationState.summary||'Executive discussion'}. Latest question: ${q}`;
+}
+function contextualUnknownReply(prompt){
+  const q=String(prompt||'').toLowerCase().trim();
+  const topic=conversationState.topic;
+  const entity=conversationState.entity||'current business issue';
+  const amount=Number(conversationState.annualImpact)||0;
+  const amountText=amount?` The modeled annual impact is ${money.format(amount)}.`:'';
+  const topicDetails={
+    insurance:'The evidence points to above-benchmark premiums, stale market testing, and overlapping riders.',
+    processing:'The evidence points to a higher blended fee rate and avoidable processor markup.',
+    software:'The evidence points to inactive seats and overlapping tools rather than necessary active licenses.',
+    freight:'The evidence points to expensive west-location lanes and fragmented shipments.',
+    cash:'Collections improved and no unusually large disbursement appeared in the current review.',
+    invoice:'The invoice is above the vendor pattern and contains an unusual freight surcharge.',
+    payroll:'The increase is concentrated in overtime and staffing changes at the west location.',
+    receivables:'Three larger customers account for most of the aging balance.',
+    profitability:'Margin pressure is concentrated in a few negotiable operating costs, not weak revenue.',
+    inventory:'Slow-moving SKUs are tying up working capital faster than current sales velocity supports.'
+  };
+  if(/yes|correct|right|exactly|okay|ok|sure/.test(q)) return `Understood. I’ll stay with ${entity}. ${conversationState.recommendation}`;
+  if(/no|not that|wrong|different/.test(q)) return `Understood. I will not assume you mean ${entity}. Name the item you want to switch to, or describe the result you want, and I’ll change direction without clearing our history.`;
+  if(/how (do|can|would)|what.*step|walk me through/.test(q)) return `${conversationState.recommendation} I would handle it in three steps: verify the supporting data, contact the responsible owner or vendor, and record the result in the Action Tracker.${amountText}`;
+  if(/worth|important|priority|urgent/.test(q)) return `${entity.replace(/^./,c=>c.toUpperCase())} is worth attention because it is actionable and financially material.${amountText} It is ${conversationState.confidence>=90?'a high-confidence':'a moderate-confidence'} finding, but it does not require a panic response.`;
+  if(/can we|should we|would you/.test(q)) return `Yes—based on the current ${entity} discussion, that is a reasonable next move. ${conversationState.recommendation}${amountText}`;
+  if(/what|why|how|when|where|who/.test(q)) return `${topicDetails[topic]||`I’m still following the ${entity} discussion.`}${amountText} ${conversationState.recommendation}`;
+  return `I’m continuing the ${entity} discussion rather than starting over. ${topicDetails[topic]||''}${amountText} My current recommendation is: ${conversationState.recommendation}`;
 }
 
 function detectIntent(prompt){
@@ -353,7 +390,7 @@ function contextualFollowUp(type){
     return 'I can draft that. Should the email address the insurance broker, payment processor, software owner, freight carrier, or invoice vendor?';
   }
   if(type==='carriers') return 'Use the same coverage schedule and loss-run package for all three quotes. Compare total premium, deductibles, exclusions, carrier rating, claims service, and overlapping riders. Atlas would not choose the lowest price if the coverage is materially weaker.';
-  return `I’m still following the ${conversationState.entity} discussion. Would you like the reason, the financial impact, the recommended next step, or a draft communication?`;
+  return contextualUnknownReply(conversationState.lastQuestion||conversationState.entity);
 }
 
 function buildReply(prompt){
@@ -403,7 +440,7 @@ function buildReply(prompt){
     case 'anomalies': setContext('anomalies','financial anomalies','anomalies','Review the flagged invoice and west-location cost variances.'); return 'The most important anomalies are one vendor invoice 22% above its six-month average, west-location freight 12% above the company average, and elevated overtime. None is labeled fraud; each requires supporting-document review.';
     case 'expenses': setContext('expenses','largest business expenses','expenses','Start with costs that are both large and negotiable.'); return 'The largest controllable cost areas in the demo are payroll, insurance, freight, merchant processing, and software. Payroll is largest overall, but insurance and processing offer the fastest near-term savings without reducing staff.';
     case 'risk': setContext('risk','current business risks','risk','Address the insurance renewal before the deadline.'); return 'The highest current risk is the approaching insurance renewal at above-benchmark pricing. Secondary risks are receivable aging, west-location freight and overtime, and the flagged vendor invoice. Liquidity risk remains low.';
-    default: return `I can help with that. Based on the current executive review, the most relevant areas are commercial insurance, merchant processing, software seats, freight, cash flow, receivables, and the flagged vendor invoice. Tell me the outcome you want—understand the change, calculate the impact, compare options, or choose the next action—and I’ll continue from there.`;
+    default: return contextualUnknownReply(prompt);
   }
 }
 
@@ -457,7 +494,7 @@ function renderFollowUps(prompt){
   row.querySelectorAll('[data-prompt]').forEach(b=>b.addEventListener('click',()=>answer(b.dataset.prompt)));
 }
 
-const COPILOT_STORAGE_KEY='atlasCopilotConversation24';
+const COPILOT_STORAGE_KEY='atlasCopilotConversation26';
 const defaultCopilotMessage='I completed your executive review. Since your last login, I found four changes: insurance remains the largest savings opportunity, a new $5,100 freight opportunity appeared, cash improved by $38,200, and one vendor invoice needs review. Which should we examine first?';
 
 function escapeMessage(text){return String(text).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -466,7 +503,7 @@ function loadConversation(){
 }
 function saveConversation(){
   const items=[...document.querySelectorAll('#chat .message')].map(el=>({who:el.classList.contains('user')?'user':'atlas',text:el.querySelector('p')?.textContent||''}));
-  localStorage.setItem(COPILOT_STORAGE_KEY,JSON.stringify(items.slice(-20)));
+  localStorage.setItem(COPILOT_STORAGE_KEY,JSON.stringify(items.slice(-60)));
 }
 function restoreConversation(){
   const chat=document.querySelector('#chat'); if(!chat) return; chat.innerHTML='';
@@ -497,7 +534,7 @@ function updateMemoryIndicator(){
 function openConversationHistory(){
   const messages=loadConversation();
   const body=messages.map((m,index)=>`<article class="history-message ${m.who}"><span>${m.who==='atlas'?'ATLAS':'YOU'} · ${String(index+1).padStart(2,'0')}</span><p>${escapeMessage(m.text).replace(/\n/g,'<br>')}</p></article>`).join('');
-  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 25 · CEO COMMAND CENTER');
+  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 26 · CONVERSATION INTELLIGENCE');
 }
 function answer(prompt){
   loadMemory();
@@ -507,6 +544,7 @@ function answer(prompt){
     typing?.classList.remove('show');
     const response=buildReply(prompt);
     conversationState.lastQuestion=prompt;
+    rememberQuestion(prompt);
     conversationState.lastAnswer=response;
     conversationState.turnCount=(Number(conversationState.turnCount)||0)+1;
     saveMemory();
@@ -544,7 +582,7 @@ function bindDashboard(){
   document.querySelectorAll('[data-prompt]').forEach(b=>b.addEventListener('click',()=>answer(b.dataset.prompt)));
   document.querySelector('#chatForm')?.addEventListener('submit',e=>{e.preventDefault();const i=document.querySelector('#chatInput');const v=i.value.trim();if(v){answer(v);i.value=''}});
   document.querySelector('#historyBtn')?.addEventListener('click',openConversationHistory);
-  document.querySelector('#newChat')?.addEventListener('click',()=>{localStorage.removeItem(COPILOT_STORAGE_KEY);resetMemory();document.querySelector('#chat').innerHTML='';addMessage('New conversation started. I still have the current executive data available. What would you like to review?','atlas');updateMemoryIndicator();renderFollowUps('')});
+  document.querySelector('#newChat')?.addEventListener('click',()=>{localStorage.removeItem(COPILOT_STORAGE_KEY);resetMemory();document.querySelector('#chat').innerHTML='';addMessage('New conversation started. I still have the current executive data available. Ask naturally—I will keep the thread for the full session.','atlas');updateMemoryIndicator();renderFollowUps('')});
   document.querySelector('#reviewChangesBtn')?.addEventListener('click',()=>answer('What changed since yesterday?'));
   document.querySelector('#askBtn')?.addEventListener('click',()=>{document.querySelector('#atlasPanel').scrollIntoView({behavior:'smooth',block:'start'});document.querySelector('#chatInput').focus()});
   document.querySelector('#briefBtn')?.addEventListener('click',()=>openModal('Tonight’s Executive Brief',`<div class="brief-grid"><article><span>Financial health</span><strong>92</strong><small>Healthy</small></article><article><span>Annual savings</span><strong>$46,100</strong><small>4 opportunities</small></article><article><span>Top priority</span><strong>Insurance review</strong><small>$18,300 potential</small></article></div><p>Atlas recommends beginning the commercial insurance review first, followed by merchant processing. Cash flow remains healthy and no immediate liquidity risk was detected.</p>`));
