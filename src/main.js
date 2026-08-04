@@ -16,6 +16,27 @@ function loadActions(){try{const saved=JSON.parse(localStorage.getItem(ACTIONS_K
 function saveActions(actions){localStorage.setItem(ACTIONS_KEY,JSON.stringify(actions))}
 function actionSummary(){const actions=loadActions();return {actions,identified:actions.reduce((n,a)=>n+a.impact,0),realized:actions.reduce((n,a)=>n+(Number(a.realized)||0),0),completed:actions.filter(a=>a.status==='completed').length,inProgress:actions.filter(a=>a.status==='in-progress').length}}
 
+const executiveTimeline = [
+  ['8:42 AM','Atlas analyzed 9,842 transactions','complete'],
+  ['8:44 AM','Duplicate subscription pattern reviewed','complete'],
+  ['8:47 AM','New freight savings opportunity identified','complete'],
+  ['9:03 AM','Daily CEO brief prepared','complete'],
+  ['9:18 AM','Insurance renewal placed at highest priority','active']
+];
+
+const companyHealth = [
+  ['Cash Flow',84,'Healthy and improving'],
+  ['Growth',72,'Revenue trend remains positive'],
+  ['Efficiency',93,'Strong operating discipline'],
+  ['Risk',31,'Low overall exposure']
+];
+
+const priorityGroups = [
+  ['Immediate attention','critical',[['Commercial insurance renewal','18% above peer benchmark · renewal window approaching','$18,300'],['Vendor invoice review','22% above six-month average · verify surcharge','Review']]],
+  ['This week','warning',[['Merchant processing repricing','Effective rate increased this quarter','$14,800'],['West-location freight review','Cost per shipment is 12% above average','$5,100']]],
+  ['Opportunities','positive',[['Software seat consolidation','27 inactive seats detected','$7,900'],['Collections acceleration','Three accounts drive most overdue receivables','Cash impact']]]
+];
+
 const intelligence = [
   ['Insurance market', 'Commercial premiums are softening for low-claim manufacturers.', '6 min ago'],
   ['Fuel costs', 'Regional diesel prices are trending 2.1% lower this month.', '18 min ago'],
@@ -43,7 +64,7 @@ app.innerHTML = `
       <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name">Atlas AI Demo Company⌄</button></div>
       <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
-        <span class="release">ATLAS 24.1 · CONTEXT INTELLIGENCE</span>
+        <span class="release">ATLAS 25 · CEO COMMAND CENTER</span>
         <div class="profile"><span>BH</span><div><strong>Brian Hess</strong><small>Owner</small></div></div>
       </div>
     </header>
@@ -53,7 +74,7 @@ app.innerHTML = `
     <main class="page" id="mainPage">
       <section class="welcome-card">
         <div>
-          <span class="micro">ATLAS EXECUTIVE COMMAND CENTER · SPRINT 24.1</span>
+          <span class="micro">ATLAS EXECUTIVE COMMAND CENTER · SPRINT 25</span>
           <h1 id="dynamicGreeting">Good afternoon, Brian.</h1>
           <p>Atlas completed your executive review and prepared the changes that need your attention.</p>
           <div class="welcome-actions"><button class="gold" id="briefBtn">View executive brief</button><button class="ghost" id="actionTrackerBtn">Open action tracker</button><button class="ghost" id="askBtn">Ask Atlas</button></div>
@@ -75,6 +96,27 @@ app.innerHTML = `
             <article class="panel kpi"><span>SAVINGS IDENTIFIED</span><strong class="count money" data-value="46100">$0</strong><small>4 ranked opportunities</small></article>
           </section>
 
+          <section class="sprint25-value-grid">
+            <article class="panel saved-today-card">
+              <div class="section-head"><div><span class="micro">ATLAS SAVED YOU TODAY</span><h2>Value created before lunch</h2></div><span class="ready-pill green">● LIVE VALUE</span></div>
+              <div class="saved-metrics">
+                <div><strong>$1,842</strong><span>annual savings surfaced today</span></div>
+                <div><strong>4.3 hrs</strong><span>manual review time avoided</span></div>
+                <div><strong>7</strong><span>duplicate charges screened</span></div>
+                <div><strong>2</strong><span>tax opportunities detected</span></div>
+              </div>
+            </article>
+            <article class="panel health-card">
+              <div class="section-head"><div><span class="micro">LIVE COMPANY HEALTH</span><h2>Five-second business view</h2></div><strong class="health-score">92</strong></div>
+              <div class="health-list">${companyHealth.map(([label,value,note])=>`<div class="health-row"><div><strong>${label}</strong><small>${note}</small></div><div class="health-meter"><span style="--value:${value}%"></span></div><b>${value}%</b></div>`).join('')}</div>
+            </article>
+          </section>
+
+          <section class="panel priority-center-v25">
+            <div class="section-head"><div><span class="micro">ATLAS PRIORITY CENTER</span><h2>What deserves the CEO's attention</h2></div><span class="ready-pill">RANKED BY IMPACT + URGENCY</span></div>
+            <div class="priority-groups">${priorityGroups.map(([title,level,items])=>`<section class="priority-group ${level}"><header><span></span><strong>${title}</strong><small>${items.length} items</small></header>${items.map(([name,detail,value])=>`<button class="priority-card-v25" data-v25-priority="${name}"><div><strong>${name}</strong><small>${detail}</small></div><b>${value}</b><span>›</span></button>`).join('')}</section>`).join('')}</div>
+          </section>
+
           <section class="panel action-tracker-summary" id="actionTrackerSummary"></section>
 
           <section class="panel action-center">
@@ -82,6 +124,11 @@ app.innerHTML = `
             <div class="priority-list">
               ${priorities.map((p,i)=>`<button class="priority-row" data-priority="${i}"><span class="priority-dot ${p.level}"></span><span class="priority-rank">${String(i+1).padStart(2,'0')}</span><span class="priority-copy"><strong>${p.title}</strong><small>${p.detail}</small></span><span class="impact">${p.savings?money.format(p.savings):'Positive trend'}</span><span class="arrow">›</span></button>`).join('')}
             </div>
+          </section>
+
+          <section class="panel executive-timeline-panel">
+            <div class="section-head"><div><span class="micro">EXECUTIVE ACTIVITY TIMELINE</span><h2>Atlas working in the background</h2></div><span class="pulse">● ACTIVE</span></div>
+            <div class="executive-timeline">${executiveTimeline.map(([time,text,status])=>`<div class="timeline-event ${status}"><time>${time}</time><span></span><div><strong>${text}</strong><small>${status==='active'?'Monitoring and preparing next action':'Completed automatically'}</small></div><b>${status==='active'?'NOW':'✓'}</b></div>`).join('')}</div>
           </section>
 
           <section class="two-col">
@@ -356,7 +403,7 @@ function buildReply(prompt){
     case 'anomalies': setContext('anomalies','financial anomalies','anomalies','Review the flagged invoice and west-location cost variances.'); return 'The most important anomalies are one vendor invoice 22% above its six-month average, west-location freight 12% above the company average, and elevated overtime. None is labeled fraud; each requires supporting-document review.';
     case 'expenses': setContext('expenses','largest business expenses','expenses','Start with costs that are both large and negotiable.'); return 'The largest controllable cost areas in the demo are payroll, insurance, freight, merchant processing, and software. Payroll is largest overall, but insurance and processing offer the fastest near-term savings without reducing staff.';
     case 'risk': setContext('risk','current business risks','risk','Address the insurance renewal before the deadline.'); return 'The highest current risk is the approaching insurance renewal at above-benchmark pricing. Secondary risks are receivable aging, west-location freight and overtime, and the flagged vendor invoice. Liquidity risk remains low.';
-    default: return `I understand the question, but I need a little more context to answer it responsibly. Are you asking about savings, revenue, profitability, payroll, cash flow, receivables, inventory, vendors, transactions, taxes, compliance, imports, billing, or risk?`;
+    default: return `I can help with that. Based on the current executive review, the most relevant areas are commercial insurance, merchant processing, software seats, freight, cash flow, receivables, and the flagged vendor invoice. Tell me the outcome you want—understand the change, calculate the impact, compare options, or choose the next action—and I’ll continue from there.`;
   }
 }
 
@@ -450,7 +497,7 @@ function updateMemoryIndicator(){
 function openConversationHistory(){
   const messages=loadConversation();
   const body=messages.map((m,index)=>`<article class="history-message ${m.who}"><span>${m.who==='atlas'?'ATLAS':'YOU'} · ${String(index+1).padStart(2,'0')}</span><p>${escapeMessage(m.text).replace(/\n/g,'<br>')}</p></article>`).join('');
-  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 24.1 · CONTEXT INTELLIGENCE');
+  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 25 · CEO COMMAND CENTER');
 }
 function answer(prompt){
   loadMemory();
@@ -475,6 +522,19 @@ function openActionTracker(){const s=actionSummary();openModal('Executive Action
 function toast(msg){const t=document.querySelector('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)}
 
 function bindDashboard(){
+  document.querySelectorAll('[data-v25-priority]').forEach(button=>button.addEventListener('click',()=>{
+    const item=button.dataset.v25Priority;
+    const prompts={
+      'Commercial insurance renewal':'Explain the top priority',
+      'Vendor invoice review':'Review the vendor invoice',
+      'Merchant processing repricing':'Explain merchant processing fees',
+      'West-location freight review':'Explain the freight opportunity',
+      'Software seat consolidation':'Explain the software opportunity',
+      'Collections acceleration':'Explain receivables'
+    };
+    document.querySelector('#atlasPanel')?.scrollIntoView({behavior:'smooth',block:'start'});
+    setTimeout(()=>answer(prompts[item]||`Explain ${item}`),250);
+  }));
   renderActionSummary();
   document.querySelector('#actionTrackerBtn')?.addEventListener('click',openActionTracker);
   animateCounts();
@@ -594,7 +654,7 @@ function bindFunctionalPage(name){
 
 function signOut(){
   sessionStorage.removeItem('atlasSession');
-  app.innerHTML=`<div class="signed-out"><section class="signin-card"><span class="brand-mark large">A</span><span class="micro">ATLAS AI · SMARTLEDGER</span><h1>You are signed out.</h1><p>Choose how you would like to enter Atlas AI. Demo mode will never open automatically.</p><button class="gold" id="demoEntry">Enter demo workspace</button><button class="outline" id="accountEntry">Sign in to an account</button><small>Sprint 24.1 · Secure session cleared</small></section></div>`;
+  app.innerHTML=`<div class="signed-out"><section class="signin-card"><span class="brand-mark large">A</span><span class="micro">ATLAS AI · SMARTLEDGER</span><h1>You are signed out.</h1><p>Choose how you would like to enter Atlas AI. Demo mode will never open automatically.</p><button class="gold" id="demoEntry">Enter demo workspace</button><button class="outline" id="accountEntry">Sign in to an account</button><small>Sprint 25 · Secure session cleared</small></section></div>`;
   document.querySelector('#demoEntry').addEventListener('click',()=>location.reload());
   document.querySelector('#accountEntry').addEventListener('click',()=>{document.querySelector('.signin-card').innerHTML=`<span class="brand-mark large">A</span><span class="micro">SECURE ACCOUNT ACCESS</span><h1>Sign in</h1><label class="signin-label">Email<input type="email" placeholder="you@company.com"></label><label class="signin-label">Password<input type="password" placeholder="••••••••"></label><button class="gold" id="signinSubmit">Sign in</button><button class="outline" id="backChoice">Back</button>`;document.querySelector('#signinSubmit').addEventListener('click',()=>toast('Account authentication will connect during production setup'));document.querySelector('#backChoice').addEventListener('click',()=>location.reload())});
 }
