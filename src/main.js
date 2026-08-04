@@ -64,7 +64,7 @@ app.innerHTML = `
       <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name">Atlas AI Demo Company⌄</button></div>
       <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
-        <span class="release">ATLAS 27 · BUSINESS MEMORY</span>
+        <span class="release">ATLAS 28 · CONVERSATION ENGINE</span>
         <div class="profile"><span>BH</span><div><strong>Brian Hess</strong><small>Owner</small></div></div>
       </div>
     </header>
@@ -213,8 +213,8 @@ const replies = {
   'What changed since yesterday?': 'Since yesterday, merchant processing fees increased 0.4%, cash on hand improved by $38,200, one new freight savings opportunity was identified, and no new liquidity risk was detected.'
 };
 
-const MEMORY_KEY='atlasNaturalConversation27';
-const COMPANY_MEMORY_KEY='atlasCompanyMemory27';
+const MEMORY_KEY='atlasNaturalConversation28';
+const COMPANY_MEMORY_KEY='atlasCompanyMemory28';
 
 const defaultCompanyMemory={
   company:'Atlas Manufacturing Group',
@@ -247,7 +247,7 @@ function companyMemorySummary(){
 function openBusinessMemory(){
   const list=(title,items,mapper=x=>x)=>`<h3>${title}</h3><ul>${(items||[]).map(x=>`<li>${mapper(x)}</li>`).join('')||'<li>Nothing saved yet.</li>'}</ul>`;
   const body=`<div class="business-memory-modal"><p>${companyMemorySummary()}</p>${list('Executive priorities',companyMemory.priorities)}${list('Recurring issues',companyMemory.recurringIssues)}${list('Prior decisions',companyMemory.decisions,x=>`${x.date}: ${x.text}`)}${list('Response preferences',companyMemory.preferences)}<p class="memory-updated">Updated ${new Date(companyMemory.updatedAt).toLocaleString()}</p></div>`;
-  openModal('Atlas Business Memory',body,'SPRINT 27 · BUSINESS MEMORY');
+  openModal('Atlas Business Memory',body,'SPRINT 28 · CONVERSATION ENGINE');
 }
 function parseMemoryCommand(prompt){
   const raw=String(prompt||'').trim();
@@ -257,14 +257,14 @@ function parseMemoryCommand(prompt){
   return '';
 }
 
-const conversationState={topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0,summary:'',recentTopics:[],lastQuestions:[]};
+const conversationState={topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0,summary:'',recentTopics:[],lastQuestions:[],conversationId:'',actionStage:0,lastResponses:[],pendingAction:''};
 
 function loadMemory(){
-  try{const saved=localStorage.getItem(MEMORY_KEY)||localStorage.getItem('atlasNaturalConversation24')||localStorage.getItem('atlasNaturalConversation21_2_1')||'{}';Object.assign(conversationState,JSON.parse(saved));}catch{}
+  try{const saved=localStorage.getItem(MEMORY_KEY)||localStorage.getItem('atlasNaturalConversation27')||localStorage.getItem('atlasNaturalConversation24')||localStorage.getItem('atlasNaturalConversation21_2_1')||'{}';Object.assign(conversationState,JSON.parse(saved));}catch{}
 }
 function saveMemory(){localStorage.setItem(MEMORY_KEY,JSON.stringify(conversationState));}
 function resetMemory(){
-  Object.assign(conversationState,{topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0,summary:'',recentTopics:[],lastQuestions:[]});
+  Object.assign(conversationState,{topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0,summary:'',recentTopics:[],lastQuestions:[],conversationId:crypto.randomUUID?.()||String(Date.now()),actionStage:0,lastResponses:[],pendingAction:''});
   localStorage.removeItem(MEMORY_KEY);
 }
 function setContext(topic,entity,intent,recommendation='',details={}){
@@ -307,6 +307,54 @@ function rememberQuestion(prompt){
   conversationState.lastQuestions=[q,...(conversationState.lastQuestions||[]).filter(x=>x!==q)].slice(0,12);
   conversationState.summary=`${conversationState.summary||'Executive discussion'}. Latest question: ${q}`;
 }
+
+function normalizeReplyText(text){
+  return String(text||'').toLowerCase().replace(/[^a-z0-9$% ]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function replySimilarity(a,b){
+  const A=new Set(normalizeReplyText(a).split(' ').filter(x=>x.length>2));
+  const B=new Set(normalizeReplyText(b).split(' ').filter(x=>x.length>2));
+  if(!A.size||!B.size) return 0;
+  let common=0; A.forEach(x=>{if(B.has(x)) common++});
+  return common/Math.max(A.size,B.size);
+}
+function isConfirmation(prompt){
+  return /^(?:ok(?:ay)?|yes|sure|correct|right|exactly|sounds good|let'?s do (?:it|that)|do it|go ahead|proceed|make it happen|that works)(?:[,.! ]+.*)?$/i.test(String(prompt||'').trim());
+}
+function actionPlanForTopic(topic){
+  const plans={
+    insurance:['Pull the current policy, coverage schedule, and loss runs.','Ask the broker for three like-for-like quotes.','Compare premium, exclusions, deductibles, and overlapping riders.','Record the selected option in the Action Tracker.'],
+    processing:['Download the latest merchant statement.','Calculate the blended rate and isolate processor markup.','Request repricing from the current provider and one competitor.','Record the negotiated rate and verified savings.'],
+    software:['Send the inactive-seat list to department owners.','Confirm which seats are still required.','Cancel or consolidate unused licenses before renewal.','Record realized savings after the next billing cycle.'],
+    freight:['Review the west location’s five highest-cost lanes.','Combine fragmented shipments where practical.','Request updated quotes from at least two carriers.','Track cost per shipment for 30 days.'],
+    invoice:['Place the invoice on temporary review.','Match it to the purchase order and shipment detail.','Ask the vendor to explain the surcharge.','Approve, correct, or dispute it based on the documentation.'],
+    savings:['Start the commercial-insurance review.','Then reprice merchant processing.','Assign an owner and due date to each action.','Verify savings before marking either action complete.']
+  };
+  return plans[topic]||['Verify the supporting data.','Assign an owner and due date.','Complete the recommended action.','Record the result in the Action Tracker.'];
+}
+function advanceConfirmedAction(){
+  const steps=actionPlanForTopic(conversationState.topic);
+  const stage=Math.min(Number(conversationState.actionStage)||0,steps.length-1);
+  const current=steps[stage];
+  const next=steps[stage+1];
+  conversationState.actionStage=Math.min(stage+1,steps.length);
+  conversationState.pendingAction=current;
+  conversationState.lastIntent='confirmation';
+  rememberBusinessItem('decision',`Proceed with ${conversationState.entity}: ${current}`);
+  saveMemory();
+  if(stage===0) return `Agreed. I’ve advanced the ${conversationState.entity} plan. Step 1: ${current}${next?` After that: ${next}`:''}`;
+  if(stage<steps.length-1) return `Done—we’re moving to the next step for ${conversationState.entity}: ${current}${next?` Then: ${next}`:''}`;
+  return `The planned sequence for ${conversationState.entity} is complete. Final step: ${current} I would now record the outcome and verified savings in the Action Tracker.`;
+}
+function preventResponseLoop(response,prompt){
+  const recent=[conversationState.lastAnswer,...(conversationState.lastResponses||[])].filter(Boolean);
+  const duplicate=recent.some(x=>replySimilarity(response,x)>0.82);
+  if(!duplicate) return response;
+  const steps=actionPlanForTopic(conversationState.topic);
+  const stage=Math.min(Number(conversationState.actionStage)||0,steps.length-1);
+  conversationState.actionStage=Math.min(stage+1,steps.length);
+  return `Let me move this forward instead of repeating myself. For ${conversationState.entity}, the next concrete action is: ${steps[stage]} ${stage+1<steps.length?`After that, ${steps[stage+1].toLowerCase()}`:'Then record the result in the Action Tracker.'}`;
+}
 function contextualUnknownReply(prompt){
   const q=String(prompt||'').toLowerCase().trim();
   const topic=conversationState.topic;
@@ -325,7 +373,7 @@ function contextualUnknownReply(prompt){
     profitability:'Margin pressure is concentrated in a few negotiable operating costs, not weak revenue.',
     inventory:'Slow-moving SKUs are tying up working capital faster than current sales velocity supports.'
   };
-  if(/yes|correct|right|exactly|okay|ok|sure/.test(q)) return `Understood. I’ll stay with ${entity}. ${conversationState.recommendation}`;
+  if(isConfirmation(q)) return advanceConfirmedAction();
   if(/no|not that|wrong|different/.test(q)) return `Understood. I will not assume you mean ${entity}. Name the item you want to switch to, or describe the result you want, and I’ll change direction without clearing our history.`;
   if(/how (do|can|would)|what.*step|walk me through/.test(q)) return `${conversationState.recommendation} I would handle it in three steps: verify the supporting data, contact the responsible owner or vendor, and record the result in the Action Tracker.${amountText}`;
   if(/worth|important|priority|urgent/.test(q)) return `${entity.replace(/^./,c=>c.toUpperCase())} is worth attention because it is actionable and financially material.${amountText} It is ${conversationState.confidence>=90?'a high-confidence':'a moderate-confidence'} finding, but it does not require a panic response.`;
@@ -337,6 +385,7 @@ function contextualUnknownReply(prompt){
 function detectIntent(prompt){
   const q=String(prompt||'').toLowerCase().trim();
   if(replies[prompt]) return {type:'exact',reply:replies[prompt]};
+  if(isConfirmation(q)) return {type:'confirm'};
   if(/(?:how much|what.*cost|cost.*how much|pay for).*(?:month|monthly|year|annual)|(?:month|monthly).*(?:cost|pay)/.test(q) && (isFollowUp(q)||conversationState.topic!=='general')) return {type:'contextAmount'};
   if(/draft.*email|write.*email/.test(q)) return {type:'draft'};
   if(/compare carriers|compare them|carrier quotes/.test(q)) return {type:'carriers'};
@@ -444,6 +493,7 @@ function buildReply(prompt){
     if(prompt==='What should I do first?') setContext('insurance','commercial insurance opportunity','next','Request three competitive quotes before renewal.');
     return intent.reply+'\n\nExecutive recommendation: '+conversationState.recommendation;
   }
+  if(intent.type==='confirm') return advanceConfirmedAction();
   if(intent.type==='contextAmount') return contextualAmountReply(prompt);
   if(['why','next','more','draft','carriers','followup','which'].includes(intent.type)){
     if(intent.type==='which') return 'Commercial insurance is the largest opportunity at $18,300 annually, followed by merchant processing at $14,800.';
@@ -537,12 +587,12 @@ function renderFollowUps(prompt){
   row.querySelectorAll('[data-prompt]').forEach(b=>b.addEventListener('click',()=>answer(b.dataset.prompt)));
 }
 
-const COPILOT_STORAGE_KEY='atlasCopilotConversation26';
+const COPILOT_STORAGE_KEY='atlasCopilotConversation28';
 const defaultCopilotMessage='I completed your executive review. Since your last login, I found four changes: insurance remains the largest savings opportunity, a new $5,100 freight opportunity appeared, cash improved by $38,200, and one vendor invoice needs review. Which should we examine first?';
 
 function escapeMessage(text){return String(text).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function loadConversation(){
-  try{const raw=localStorage.getItem(COPILOT_STORAGE_KEY)||localStorage.getItem('atlasCopilotConversation21_2_1')||'[]';const saved=JSON.parse(raw);return Array.isArray(saved)&&saved.length?saved:[{who:'atlas',text:defaultCopilotMessage}]}catch{return [{who:'atlas',text:defaultCopilotMessage}]}
+  try{const raw=localStorage.getItem(COPILOT_STORAGE_KEY)||localStorage.getItem('atlasCopilotConversation26')||localStorage.getItem('atlasCopilotConversation21_2_1')||'[]';const saved=JSON.parse(raw);return Array.isArray(saved)&&saved.length?saved:[{who:'atlas',text:defaultCopilotMessage}]}catch{return [{who:'atlas',text:defaultCopilotMessage}]}
 }
 function saveConversation(){
   const items=[...document.querySelectorAll('#chat .message')].map(el=>({who:el.classList.contains('user')?'user':'atlas',text:el.querySelector('p')?.textContent||''}));
@@ -577,7 +627,7 @@ function updateMemoryIndicator(){
 function openConversationHistory(){
   const messages=loadConversation();
   const body=messages.map((m,index)=>`<article class="history-message ${m.who}"><span>${m.who==='atlas'?'ATLAS':'YOU'} · ${String(index+1).padStart(2,'0')}</span><p>${escapeMessage(m.text).replace(/\n/g,'<br>')}</p></article>`).join('');
-  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 27 · BUSINESS MEMORY');
+  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 28 · CONVERSATION ENGINE');
 }
 function answer(prompt){
   loadMemory();
@@ -587,10 +637,12 @@ function answer(prompt){
   setTimeout(()=>{
     typing?.classList.remove('show');
     const memoryCommand=parseMemoryCommand(prompt);
-    const response=memoryCommand||buildReply(prompt);
+    let response=memoryCommand||buildReply(prompt);
+    response=preventResponseLoop(response,prompt);
     conversationState.lastQuestion=prompt;
     rememberQuestion(prompt);
     conversationState.lastAnswer=response;
+    conversationState.lastResponses=[response,...(conversationState.lastResponses||[]).filter(x=>x!==response)].slice(0,8);
     companyMemory.lastSessionSummary=`Discussed ${conversationState.entity}. Latest question: ${prompt}. Latest recommendation: ${conversationState.recommendation}`; saveCompanyMemory();
     conversationState.turnCount=(Number(conversationState.turnCount)||0)+1;
     saveMemory();
@@ -739,7 +791,7 @@ function bindFunctionalPage(name){
 
 function signOut(){
   sessionStorage.removeItem('atlasSession');
-  app.innerHTML=`<div class="signed-out"><section class="signin-card"><span class="brand-mark large">A</span><span class="micro">ATLAS AI · SMARTLEDGER</span><h1>You are signed out.</h1><p>Choose how you would like to enter Atlas AI. Demo mode will never open automatically.</p><button class="gold" id="demoEntry">Enter demo workspace</button><button class="outline" id="accountEntry">Sign in to an account</button><small>Sprint 25 · Secure session cleared</small></section></div>`;
+  app.innerHTML=`<div class="signed-out"><section class="signin-card"><span class="brand-mark large">A</span><span class="micro">ATLAS AI · SMARTLEDGER</span><h1>You are signed out.</h1><p>Choose how you would like to enter Atlas AI. Demo mode will never open automatically.</p><button class="gold" id="demoEntry">Enter demo workspace</button><button class="outline" id="accountEntry">Sign in to an account</button><small>Sprint 28 · Secure session cleared</small></section></div>`;
   document.querySelector('#demoEntry').addEventListener('click',()=>location.reload());
   document.querySelector('#accountEntry').addEventListener('click',()=>{document.querySelector('.signin-card').innerHTML=`<span class="brand-mark large">A</span><span class="micro">SECURE ACCOUNT ACCESS</span><h1>Sign in</h1><label class="signin-label">Email<input type="email" placeholder="you@company.com"></label><label class="signin-label">Password<input type="password" placeholder="••••••••"></label><button class="gold" id="signinSubmit">Sign in</button><button class="outline" id="backChoice">Back</button>`;document.querySelector('#signinSubmit').addEventListener('click',()=>toast('Account authentication will connect during production setup'));document.querySelector('#backChoice').addEventListener('click',()=>location.reload())});
 }
