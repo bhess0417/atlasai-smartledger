@@ -64,7 +64,7 @@ app.innerHTML = `
       <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name">Atlas AI Demo Company⌄</button></div>
       <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
-        <span class="release">ATLAS 29 · EXECUTIVE REASONING</span>
+        <span class="release">ATLAS 30 · MORNING EXECUTIVE BRIEFING</span>
         <div class="profile"><span>BH</span><div><strong>Brian Hess</strong><small>Owner</small></div></div>
       </div>
     </header>
@@ -74,9 +74,9 @@ app.innerHTML = `
     <main class="page" id="mainPage">
       <section class="welcome-card">
         <div>
-          <span class="micro">ATLAS EXECUTIVE REASONING · SPRINT 29</span>
+          <span class="micro">ATLAS MORNING EXECUTIVE BRIEF · SPRINT 30</span>
           <h1 id="dynamicGreeting">Good afternoon, Brian.</h1>
-          <p>Atlas completed your executive review and prepared the changes that need your attention.</p>
+          <p>Atlas reviewed your business overnight and ranked the three items that matter most today.</p>
           <div class="welcome-actions"><button class="gold" id="briefBtn">View executive brief</button><button class="ghost" id="actionTrackerBtn">Open action tracker</button><button class="ghost" id="askBtn">Ask Atlas</button></div>
         </div>
         <div class="welcome-stats">
@@ -85,6 +85,24 @@ app.innerHTML = `
           <article><span>FINANCIAL HEALTH</span><strong class="count" data-value="92">0</strong><small>Healthy</small></article>
           <article><span>ATLAS CONFIDENCE</span><strong class="count percent" data-value="98">0%</strong><small>High confidence</small></article>
         </div>
+      </section>
+
+      <section class="panel morning-briefing" id="morningBriefing">
+        <div class="morning-brief-head">
+          <div><span class="micro">YOUR 90-SECOND EXECUTIVE BRIEFING</span><h2>Atlas has already done the overnight review</h2><p>9,842 transactions, 231 invoices, and 48 vendor payments analyzed.</p></div>
+          <div class="briefing-confidence"><span>CONFIDENCE</span><strong>94%</strong><small>High-confidence recommendation</small></div>
+        </div>
+        <div class="morning-priorities">
+          <button class="morning-priority critical" data-morning-action="insurance"><span>01</span><div><small>IMMEDIATE ATTENTION</small><strong>Commercial insurance renewal</strong><p>Premiums are 18% above peer benchmarks and the renewal window is approaching.</p></div><b>$18,300</b></button>
+          <button class="morning-priority warning" data-morning-action="processing"><span>02</span><div><small>THIS WEEK</small><strong>Merchant processing repricing</strong><p>The blended fee rate increased 11% this quarter.</p></div><b>$14,800</b></button>
+          <button class="morning-priority positive" data-morning-action="cash"><span>03</span><div><small>POSITIVE MOMENTUM</small><strong>Cash position improved</strong><p>Cash increased $38,200 and 90-day liquidity risk remains low.</p></div><b>Healthy</b></button>
+        </div>
+        <div class="biggest-opportunity">
+          <div><span class="micro">TODAY'S BIGGEST OPPORTUNITY</span><h3>Begin the commercial insurance review</h3><p>Highest modeled impact, approaching deadline, and low implementation risk.</p></div>
+          <div class="opportunity-facts"><div><span>ANNUAL IMPACT</span><strong>$18,300</strong></div><div><span>DIFFICULTY</span><strong>Low</strong></div><div><span>TIME TO ACT</span><strong>14 days</strong></div></div>
+          <div class="briefing-actions"><button class="gold" id="startMorningInitiative">Start initiative</button><button class="outline" id="showMorningEvidence">Show evidence</button><button class="ghost" id="remindMorning">Remind me tomorrow</button></div>
+        </div>
+        <div class="momentum-summary"><span class="momentum-arrow">↗</span><div><strong>Business momentum is improving.</strong><p>Revenue and cash remain healthy. Negotiable operating costs are the clearest near-term opportunity.</p></div></div>
       </section>
 
       <section class="dashboard-grid">
@@ -213,7 +231,7 @@ const replies = {
   'What changed since yesterday?': 'Since yesterday, merchant processing fees increased 0.4%, cash on hand improved by $38,200, one new freight savings opportunity was identified, and no new liquidity risk was detected.'
 };
 
-const MEMORY_KEY='atlasNaturalConversation29';
+const MEMORY_KEY='atlasNaturalConversation30';
 const COMPANY_MEMORY_KEY='atlasCompanyMemory28';
 
 const defaultCompanyMemory={
@@ -247,7 +265,7 @@ function companyMemorySummary(){
 function openBusinessMemory(){
   const list=(title,items,mapper=x=>x)=>`<h3>${title}</h3><ul>${(items||[]).map(x=>`<li>${mapper(x)}</li>`).join('')||'<li>Nothing saved yet.</li>'}</ul>`;
   const body=`<div class="business-memory-modal"><p>${companyMemorySummary()}</p>${list('Executive priorities',companyMemory.priorities)}${list('Recurring issues',companyMemory.recurringIssues)}${list('Prior decisions',companyMemory.decisions,x=>`${x.date}: ${x.text}`)}${list('Response preferences',companyMemory.preferences)}<p class="memory-updated">Updated ${new Date(companyMemory.updatedAt).toLocaleString()}</p></div>`;
-  openModal('Atlas Business Memory',body,'SPRINT 29 · EXECUTIVE REASONING');
+  openModal('Atlas Business Memory',body,'SPRINT 30 · MORNING EXECUTIVE BRIEFING');
 }
 function parseMemoryCommand(prompt){
   const raw=String(prompt||'').trim();
@@ -708,7 +726,7 @@ function updateMemoryIndicator(){
 function openConversationHistory(){
   const messages=loadConversation();
   const body=messages.map((m,index)=>`<article class="history-message ${m.who}"><span>${m.who==='atlas'?'ATLAS':'YOU'} · ${String(index+1).padStart(2,'0')}</span><p>${escapeMessage(m.text).replace(/\n/g,'<br>')}</p></article>`).join('');
-  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 29 · EXECUTIVE REASONING');
+  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 30 · MORNING EXECUTIVE BRIEFING');
 }
 function answer(prompt){
   loadMemory();
@@ -739,6 +757,19 @@ function openActionTracker(){const s=actionSummary();openModal('Executive Action
 function toast(msg){const t=document.querySelector('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)}
 
 function bindDashboard(){
+  document.querySelectorAll('[data-morning-action]').forEach(button=>button.addEventListener('click',()=>{
+    const prompts={insurance:'Explain the top priority',processing:'Explain merchant processing fees',cash:'Explain cash flow'};
+    document.querySelector('#atlasPanel')?.scrollIntoView({behavior:'smooth',block:'start'});
+    setTimeout(()=>answer(prompts[button.dataset.morningAction]),250);
+  }));
+  document.querySelector('#startMorningInitiative')?.addEventListener('click',()=>{
+    setContext('insurance','commercial insurance renewal','insurance','Pull the current policy and renewal terms.',{goal:'Reduce commercial insurance cost',annualImpact:18300,referents:['insurance renewal','premium benchmark','policy riders'],confidence:96,mission:'Reduce commercial insurance cost'});
+    conversationState.actionStage=0; conversationState.missionStatus='in progress'; saveMemory();
+    document.querySelector('#atlasPanel')?.scrollIntoView({behavior:'smooth',block:'start'});
+    setTimeout(()=>answer("Let's start the insurance initiative"),250);
+  });
+  document.querySelector('#showMorningEvidence')?.addEventListener('click',()=>openModal('Why Atlas ranked insurance first',`<div class="evidence-stack"><article><span>01</span><div><strong>18% above benchmark</strong><p>Current commercial premiums exceed comparable low-claim manufacturers.</p></div></article><article><span>02</span><div><strong>31 months without a market test</strong><p>The coverage has not been competitively rebid recently.</p></div></article><article><span>03</span><div><strong>Overlapping policy riders</strong><p>Two riders appear to cover similar operating risks.</p></div></article></div><div class="detail-box"><span>Modeled annual opportunity</span><strong>$18,300</strong></div>`,'ATLAS EVIDENCE REVIEW'));
+  document.querySelector('#remindMorning')?.addEventListener('click',()=>toast('Morning briefing reminder saved for tomorrow'));
   document.querySelectorAll('[data-v25-priority]').forEach(button=>button.addEventListener('click',()=>{
     const item=button.dataset.v25Priority;
     const prompts={
@@ -765,7 +796,7 @@ function bindDashboard(){
   document.querySelector('#newChat')?.addEventListener('click',()=>{localStorage.removeItem(COPILOT_STORAGE_KEY);resetMemory();document.querySelector('#chat').innerHTML='';addMessage('New conversation started. Session chat was cleared, but Atlas retained the company priorities, recurring issues, and prior decisions in Business Memory.','atlas');updateMemoryIndicator();renderFollowUps('')});
   document.querySelector('#reviewChangesBtn')?.addEventListener('click',()=>answer('What changed since yesterday?'));
   document.querySelector('#askBtn')?.addEventListener('click',()=>{document.querySelector('#atlasPanel').scrollIntoView({behavior:'smooth',block:'start'});document.querySelector('#chatInput').focus()});
-  document.querySelector('#briefBtn')?.addEventListener('click',()=>openModal('Tonight’s Executive Brief',`<div class="brief-grid"><article><span>Financial health</span><strong>92</strong><small>Healthy</small></article><article><span>Annual savings</span><strong>$46,100</strong><small>4 opportunities</small></article><article><span>Top priority</span><strong>Insurance review</strong><small>$18,300 potential</small></article></div><p>Atlas recommends beginning the commercial insurance review first, followed by merchant processing. Cash flow remains healthy and no immediate liquidity risk was detected.</p>`));
+  document.querySelector('#briefBtn')?.addEventListener('click',()=>document.querySelector('#morningBriefing')?.scrollIntoView({behavior:'smooth',block:'start'}));
   document.querySelectorAll('.priority-row').forEach(row=>row.addEventListener('click',()=>{const p=priorities[Number(row.dataset.priority)];openModal(p.title,`<p>${p.detail}</p><div class="detail-box"><span>Estimated annual impact</span><strong>${p.savings?money.format(p.savings):'Positive operating trend'}</strong></div><div class="modal-button-row"><button class="gold modal-action" id="trackThis">Track this action</button><button class="outline modal-action" id="askThis">Ask Atlas about this</button></div>`,'ATLAS INVESTIGATION');setTimeout(()=>{document.querySelector('#askThis')?.addEventListener('click',()=>{document.querySelector('#modal').classList.remove('open');answer(`Explain ${p.title}`)});document.querySelector('#trackThis')?.addEventListener('click',()=>{document.querySelector('#modal').classList.remove('open');openActionTracker()})},0)}));
 }
 
