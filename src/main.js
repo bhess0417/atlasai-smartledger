@@ -64,7 +64,7 @@ app.innerHTML = `
       <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name">Atlas AI Demo Company⌄</button></div>
       <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
-        <span class="release">ATLAS 28 · CONVERSATION ENGINE</span>
+        <span class="release">ATLAS 29 · EXECUTIVE REASONING</span>
         <div class="profile"><span>BH</span><div><strong>Brian Hess</strong><small>Owner</small></div></div>
       </div>
     </header>
@@ -74,7 +74,7 @@ app.innerHTML = `
     <main class="page" id="mainPage">
       <section class="welcome-card">
         <div>
-          <span class="micro">ATLAS CONVERSATION INTELLIGENCE · SPRINT 26</span>
+          <span class="micro">ATLAS EXECUTIVE REASONING · SPRINT 29</span>
           <h1 id="dynamicGreeting">Good afternoon, Brian.</h1>
           <p>Atlas completed your executive review and prepared the changes that need your attention.</p>
           <div class="welcome-actions"><button class="gold" id="briefBtn">View executive brief</button><button class="ghost" id="actionTrackerBtn">Open action tracker</button><button class="ghost" id="askBtn">Ask Atlas</button></div>
@@ -213,7 +213,7 @@ const replies = {
   'What changed since yesterday?': 'Since yesterday, merchant processing fees increased 0.4%, cash on hand improved by $38,200, one new freight savings opportunity was identified, and no new liquidity risk was detected.'
 };
 
-const MEMORY_KEY='atlasNaturalConversation28';
+const MEMORY_KEY='atlasNaturalConversation29';
 const COMPANY_MEMORY_KEY='atlasCompanyMemory28';
 
 const defaultCompanyMemory={
@@ -247,7 +247,7 @@ function companyMemorySummary(){
 function openBusinessMemory(){
   const list=(title,items,mapper=x=>x)=>`<h3>${title}</h3><ul>${(items||[]).map(x=>`<li>${mapper(x)}</li>`).join('')||'<li>Nothing saved yet.</li>'}</ul>`;
   const body=`<div class="business-memory-modal"><p>${companyMemorySummary()}</p>${list('Executive priorities',companyMemory.priorities)}${list('Recurring issues',companyMemory.recurringIssues)}${list('Prior decisions',companyMemory.decisions,x=>`${x.date}: ${x.text}`)}${list('Response preferences',companyMemory.preferences)}<p class="memory-updated">Updated ${new Date(companyMemory.updatedAt).toLocaleString()}</p></div>`;
-  openModal('Atlas Business Memory',body,'SPRINT 28 · CONVERSATION ENGINE');
+  openModal('Atlas Business Memory',body,'SPRINT 29 · EXECUTIVE REASONING');
 }
 function parseMemoryCommand(prompt){
   const raw=String(prompt||'').trim();
@@ -257,17 +257,18 @@ function parseMemoryCommand(prompt){
   return '';
 }
 
-const conversationState={topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0,summary:'',recentTopics:[],lastQuestions:[],conversationId:'',actionStage:0,lastResponses:[],pendingAction:''};
+const conversationState={topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0,summary:'',recentTopics:[],lastQuestions:[],conversationId:'',actionStage:0,lastResponses:[],pendingAction:'',mission:'Review executive priorities',missionStatus:'assessing',decisionOptions:[],nextBestAction:'',planOwner:'Brian Hess',planDue:'This week'};
 
 function loadMemory(){
   try{const saved=localStorage.getItem(MEMORY_KEY)||localStorage.getItem('atlasNaturalConversation27')||localStorage.getItem('atlasNaturalConversation24')||localStorage.getItem('atlasNaturalConversation21_2_1')||'{}';Object.assign(conversationState,JSON.parse(saved));}catch{}
 }
 function saveMemory(){localStorage.setItem(MEMORY_KEY,JSON.stringify(conversationState));}
 function resetMemory(){
-  Object.assign(conversationState,{topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0,summary:'',recentTopics:[],lastQuestions:[],conversationId:crypto.randomUUID?.()||String(Date.now()),actionStage:0,lastResponses:[],pendingAction:''});
+  Object.assign(conversationState,{topic:'general',entity:'business overview',lastIntent:'overview',lastQuestion:'',lastAnswer:'',turnCount:0,recommendation:'Review the highest-impact savings opportunity first.',goal:'Review priorities',annualImpact:0,referents:[],confidence:0,summary:'',recentTopics:[],lastQuestions:[],conversationId:crypto.randomUUID?.()||String(Date.now()),actionStage:0,lastResponses:[],pendingAction:'',mission:'Review executive priorities',missionStatus:'assessing',decisionOptions:[],nextBestAction:'',planOwner:'Brian Hess',planDue:'This week'});
   localStorage.removeItem(MEMORY_KEY);
 }
 function setContext(topic,entity,intent,recommendation='',details={}){
+  const topicChanged=conversationState.topic!==topic;
   conversationState.topic=topic;
   conversationState.entity=entity||topic;
   conversationState.lastIntent=intent;
@@ -276,6 +277,11 @@ function setContext(topic,entity,intent,recommendation='',details={}){
   conversationState.annualImpact=Number(details.annualImpact??conversationState.annualImpact)||0;
   conversationState.referents=Array.isArray(details.referents)?details.referents:conversationState.referents||[];
   conversationState.confidence=Number(details.confidence??conversationState.confidence)||0;
+  conversationState.mission=details.mission||executiveMissionForTopic(topic);
+  conversationState.missionStatus=details.missionStatus||'active';
+  conversationState.nextBestAction=recommendation||conversationState.nextBestAction;
+  conversationState.decisionOptions=details.decisionOptions||decisionOptionsForTopic(topic);
+  if(topicChanged) conversationState.actionStage=0;
   conversationState.recentTopics=[topic,...(conversationState.recentTopics||[]).filter(x=>x!==topic)].slice(0,6);
   conversationState.summary=`Discussing ${conversationState.entity}; goal: ${conversationState.goal}; next step: ${conversationState.recommendation}`;
   saveMemory();
@@ -332,6 +338,70 @@ function actionPlanForTopic(topic){
   };
   return plans[topic]||['Verify the supporting data.','Assign an owner and due date.','Complete the recommended action.','Record the result in the Action Tracker.'];
 }
+
+function executiveMissionForTopic(topic){
+  const missions={
+    insurance:'Reduce commercial insurance cost without weakening coverage',
+    processing:'Lower merchant-processing fees and protect payment acceptance',
+    software:'Remove unused software spend without disrupting teams',
+    freight:'Reduce west-location freight cost and shipment fragmentation',
+    invoice:'Resolve the flagged invoice before payment approval',
+    savings:'Convert identified savings into verified realized savings',
+    receivables:'Accelerate collections from the largest overdue accounts',
+    payroll:'Control overtime while protecting operating capacity',
+    inventory:'Release working capital tied up in slow-moving inventory',
+    profitability:'Recover margin through targeted, low-disruption actions',
+    risk:'Reduce the most time-sensitive business exposure'
+  };
+  return missions[topic]||`Resolve the ${conversationState.entity||topic} issue with a clear owner and next action`;
+}
+function decisionOptionsForTopic(topic){
+  const options={
+    insurance:['Draft broker request','Build quote-comparison checklist','Open action plan'],
+    processing:['Calculate blended rate','Draft repricing request','Compare provider options'],
+    software:['Review inactive-seat list','Draft owner confirmation note','Build cancellation plan'],
+    freight:['Review top five lanes','Draft carrier quote request','Build 30-day savings test'],
+    invoice:['Review supporting documents','Draft vendor question','Place temporary payment hold'],
+    savings:['Start insurance plan','Start processing plan','Assign all opportunities'],
+    receivables:['Prioritize overdue accounts','Draft collection messages','Build collection schedule']
+  };
+  return options[topic]||['Review supporting data','Create action plan','Assign owner and due date'];
+}
+function executivePlanReply(){
+  const steps=actionPlanForTopic(conversationState.topic);
+  const impact=conversationState.annualImpact?` Expected annual impact: ${money.format(conversationState.annualImpact)}.`:'';
+  conversationState.missionStatus='planned';
+  conversationState.nextBestAction=steps[0];
+  saveMemory();
+  return `Executive mission: ${conversationState.mission}.
+
+Plan:
+1. ${steps[0]}
+2. ${steps[1]}
+3. ${steps[2]}
+4. ${steps[3]}${impact}
+
+Owner: ${conversationState.planOwner}. Target: ${conversationState.planDue}. I recommend starting with step 1 now.`;
+}
+function missionStatusReply(){
+  const steps=actionPlanForTopic(conversationState.topic);
+  const stage=Math.min(Number(conversationState.actionStage)||0,steps.length);
+  const complete=stage>=steps.length;
+  return `Active mission: ${conversationState.mission}. Status: ${complete?'ready to verify results':conversationState.missionStatus}. Progress: ${stage} of ${steps.length} steps advanced. ${complete?'Next, record the verified outcome in the Action Tracker.':`Next best action: ${steps[stage]}`}`;
+}
+function chooseDecisionOption(prompt){
+  const q=String(prompt||'').toLowerCase();
+  const options=conversationState.decisionOptions?.length?conversationState.decisionOptions:decisionOptionsForTopic(conversationState.topic);
+  let pick=0;
+  if(/second|option 2|number 2|two/.test(q)) pick=1;
+  if(/third|option 3|number 3|three/.test(q)) pick=2;
+  const selected=options[Math.min(pick,options.length-1)];
+  conversationState.pendingAction=selected;
+  conversationState.missionStatus='decision made';
+  rememberBusinessItem('decision',`${conversationState.mission}: ${selected}`);
+  saveMemory();
+  return `Decision recorded: ${selected}. This supports the mission to ${conversationState.mission.toLowerCase()}. I’ll move us forward with the first concrete step: ${actionPlanForTopic(conversationState.topic)[conversationState.actionStage||0]}`;
+}
 function advanceConfirmedAction(){
   const steps=actionPlanForTopic(conversationState.topic);
   const stage=Math.min(Number(conversationState.actionStage)||0,steps.length-1);
@@ -340,9 +410,11 @@ function advanceConfirmedAction(){
   conversationState.actionStage=Math.min(stage+1,steps.length);
   conversationState.pendingAction=current;
   conversationState.lastIntent='confirmation';
+  conversationState.missionStatus=stage===0?'in progress':'advancing';
+  conversationState.nextBestAction=next||current;
   rememberBusinessItem('decision',`Proceed with ${conversationState.entity}: ${current}`);
   saveMemory();
-  if(stage===0) return `Agreed. I’ve advanced the ${conversationState.entity} plan. Step 1: ${current}${next?` After that: ${next}`:''}`;
+  if(stage===0) return `Agreed. Mission activated: ${conversationState.mission}. Step 1: ${current}${next?` After that: ${next}`:''} I’ll keep this as the active objective until you change direction.`;
   if(stage<steps.length-1) return `Done—we’re moving to the next step for ${conversationState.entity}: ${current}${next?` Then: ${next}`:''}`;
   return `The planned sequence for ${conversationState.entity} is complete. Final step: ${current} I would now record the outcome and verified savings in the Action Tracker.`;
 }
@@ -379,13 +451,18 @@ function contextualUnknownReply(prompt){
   if(/worth|important|priority|urgent/.test(q)) return `${entity.replace(/^./,c=>c.toUpperCase())} is worth attention because it is actionable and financially material.${amountText} It is ${conversationState.confidence>=90?'a high-confidence':'a moderate-confidence'} finding, but it does not require a panic response.`;
   if(/can we|should we|would you/.test(q)) return `Yes—based on the current ${entity} discussion, that is a reasonable next move. ${conversationState.recommendation}${amountText}`;
   if(/what|why|how|when|where|who/.test(q)) return `${topicDetails[topic]||`I’m still following the ${entity} discussion.`}${amountText} ${conversationState.recommendation}`;
-  return `I’m continuing the ${entity} discussion rather than starting over. ${topicDetails[topic]||''}${amountText} My current recommendation is: ${conversationState.recommendation}`;
+  const options=conversationState.decisionOptions?.length?conversationState.decisionOptions:decisionOptionsForTopic(topic);
+  return `I’m keeping our mission in view: ${conversationState.mission}. ${topicDetails[topic]||''}${amountText} My recommendation is ${conversationState.recommendation} The best next move is ${conversationState.nextBestAction||actionPlanForTopic(topic)[conversationState.actionStage||0]}. You can also choose: ${options.join(', ')}.`;
 }
 
 function detectIntent(prompt){
   const q=String(prompt||'').toLowerCase().trim();
   if(replies[prompt]) return {type:'exact',reply:replies[prompt]};
   if(isConfirmation(q)) return {type:'confirm'};
+  if(/what (?:is|are) (?:our|the) goal|what are we trying|active mission|what is the mission/.test(q)) return {type:'mission'};
+  if(/show.*plan|build.*plan|action plan|give me.*steps|map.*steps/.test(q)) return {type:'plan'};
+  if(/status|where are we|progress/.test(q) && conversationState.topic!=='general') return {type:'missionStatus'};
+  if(/(?:first|second|third) (?:one|option)|option [123]|number [123]/.test(q)) return {type:'decisionOption'};
   if(/(?:how much|what.*cost|cost.*how much|pay for).*(?:month|monthly|year|annual)|(?:month|monthly).*(?:cost|pay)/.test(q) && (isFollowUp(q)||conversationState.topic!=='general')) return {type:'contextAmount'};
   if(/draft.*email|write.*email/.test(q)) return {type:'draft'};
   if(/compare carriers|compare them|carrier quotes/.test(q)) return {type:'carriers'};
@@ -493,6 +570,10 @@ function buildReply(prompt){
     if(prompt==='What should I do first?') setContext('insurance','commercial insurance opportunity','next','Request three competitive quotes before renewal.');
     return intent.reply+'\n\nExecutive recommendation: '+conversationState.recommendation;
   }
+  if(intent.type==='mission') return `Our active mission is: ${conversationState.mission}. Success means completing the recommended action and verifying the result in the Action Tracker.`;
+  if(intent.type==='plan') return executivePlanReply();
+  if(intent.type==='missionStatus') return missionStatusReply();
+  if(intent.type==='decisionOption') return chooseDecisionOption(prompt);
   if(intent.type==='confirm') return advanceConfirmedAction();
   if(intent.type==='contextAmount') return contextualAmountReply(prompt);
   if(['why','next','more','draft','carriers','followup','which'].includes(intent.type)){
@@ -619,15 +700,15 @@ function updateMemoryIndicator(){
   const topic=document.querySelector('#topic');
   if(topic) topic.textContent=conversationState.entity==='business overview'?'General business overview':conversationState.entity.replace(/^./,c=>c.toUpperCase());
   const status=document.querySelector('#memoryStatus');
-  if(status) status.textContent=conversationState.turnCount?`${conversationState.turnCount} session exchanges · company memory retained`:'Company memory ready across visits';
+  if(status) status.textContent=conversationState.turnCount?`${conversationState.turnCount} exchanges · mission ${conversationState.missionStatus||'active'}`:'Company memory ready across visits';
   const entity=document.querySelector('#contextEntity'); if(entity) entity.textContent=conversationState.entity==='business overview'?'Business overview':conversationState.entity.replace(/^./,c=>c.toUpperCase());
-  const goal=document.querySelector('#contextGoal'); if(goal) goal.textContent=conversationState.goal||'Review priorities';
+  const goal=document.querySelector('#contextGoal'); if(goal) goal.textContent=conversationState.mission||conversationState.goal||'Review priorities';
   const confidence=document.querySelector('#contextConfidence'); if(confidence) confidence.textContent=conversationState.confidence?`${conversationState.confidence}% context confidence`:'Context ready';
 }
 function openConversationHistory(){
   const messages=loadConversation();
   const body=messages.map((m,index)=>`<article class="history-message ${m.who}"><span>${m.who==='atlas'?'ATLAS':'YOU'} · ${String(index+1).padStart(2,'0')}</span><p>${escapeMessage(m.text).replace(/\n/g,'<br>')}</p></article>`).join('');
-  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 28 · CONVERSATION ENGINE');
+  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 29 · EXECUTIVE REASONING');
 }
 function answer(prompt){
   loadMemory();
