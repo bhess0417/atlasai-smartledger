@@ -1,9 +1,3 @@
-# Sprint 32 - Opportunity to Savings Workflow
+# Sprint 32 — Opportunity-to-Savings Workflow
 
-Features:
-- Opportunity Center
-- Savings YTD
-- Assign owner
-- Due dates
-- Status tracking
-- Planned vs realized savings
+Adds a working Opportunity Center, Savings YTD, planned-versus-realized tracking, owner and due-date controls, status progression, confidence and evidence, and persistent browser storage.
