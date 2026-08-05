@@ -1,24 +1,3 @@
-// Sprint 31 Intelligence Core — retained in Sprint 32
-const reasoningEngine = {
-  analyze(question, context = {}) {
-    const text = String(question || '').trim();
-    const q = text.toLowerCase();
-    let intent = 'analyze';
-    if (/^(why|how come)|explain|reason/.test(q)) intent = 'explain';
-    else if (/compare|versus|vs\.?|difference/.test(q)) intent = 'compare';
-    else if (/let['’]?s do|start|approve|assign|complete|move forward|next step/.test(q)) intent = 'act';
-    else if (/how much|cost|save|impact|amount/.test(q)) intent = 'quantify';
-    else if (/which|what should|priority|focus/.test(q)) intent = 'prioritize';
-
-    const goal = context.goal || context.mission || 'Improve financial performance';
-    return {
-      intent,
-      goal,
-      answerStandard: 'Answer the question directly, cite the relevant business evidence, and recommend the next practical action.'
-    };
-  }
-};
-
 import './style.css';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -35,6 +14,18 @@ const ACTIONS_KEY='atlasExecutiveActions23';
 const defaultActions=priorities.filter(p=>p.savings>0).map((p,index)=>({id:p.id,title:p.title,impact:p.savings,status:index===0?'in-progress':'identified',owner:index===0?'Brian Hess':'Unassigned',due:index===0?'Aug 14, 2026':'Not scheduled',realized:0}));
 function loadActions(){try{const saved=JSON.parse(localStorage.getItem(ACTIONS_KEY)||'null');return Array.isArray(saved)&&saved.length?saved:structuredClone(defaultActions)}catch{return structuredClone(defaultActions)}}
 function saveActions(actions){localStorage.setItem(ACTIONS_KEY,JSON.stringify(actions))}
+
+const OPPORTUNITIES_KEY='atlasOpportunityCenter32';
+const opportunityDefaults=[
+  {id:'insurance',title:'Commercial insurance renewal',planned:18300,realized:0,confidence:96,status:'in-progress',owner:'Brian Hess',due:'Aug 14, 2026',evidence:'Premiums are 18% above peer benchmark; 31 months since last competitive bid.'},
+  {id:'processing',title:'Merchant processing repricing',planned:14800,realized:0,confidence:95,status:'reviewing',owner:'Finance lead',due:'Aug 21, 2026',evidence:'Blended fees increased 11% this quarter.'},
+  {id:'software',title:'Software seat consolidation',planned:7900,realized:2400,confidence:97,status:'in-progress',owner:'Operations',due:'Aug 18, 2026',evidence:'27 paid seats show no activity in 90 days.'},
+  {id:'freight',title:'West-location freight review',planned:5100,realized:1800,confidence:91,status:'completed',owner:'Logistics',due:'Completed',evidence:'Cost per shipment was 12% above company average.'}
+];
+function loadOpportunities(){try{const value=JSON.parse(localStorage.getItem(OPPORTUNITIES_KEY)||'null');return Array.isArray(value)&&value.length?value:structuredClone(opportunityDefaults)}catch{return structuredClone(opportunityDefaults)}}
+function saveOpportunities(items){localStorage.setItem(OPPORTUNITIES_KEY,JSON.stringify(items))}
+function opportunityTotals(){const items=loadOpportunities();return {items,planned:items.reduce((n,x)=>n+Number(x.planned||0),0),realized:items.reduce((n,x)=>n+Number(x.realized||0),0),active:items.filter(x=>x.status!=='completed').length}}
+function statusText(value){return ({new:'New',reviewing:'Reviewing',approved:'Approved','in-progress':'In progress',completed:'Completed'})[value]||value}
 function actionSummary(){const actions=loadActions();return {actions,identified:actions.reduce((n,a)=>n+a.impact,0),realized:actions.reduce((n,a)=>n+(Number(a.realized)||0),0),completed:actions.filter(a=>a.status==='completed').length,inProgress:actions.filter(a=>a.status==='in-progress').length}}
 
 const executiveTimeline = [
@@ -85,7 +76,7 @@ app.innerHTML = `
       <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name">Atlas AI Demo Company⌄</button></div>
       <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
-        <span class="release">ATLAS 32 · OPPORTUNITY-TO-SAVINGS</span>
+        <span class="release">ATLAS 32 · INTELLIGENCE + OPPORTUNITY CENTER</span>
         <div class="profile"><span>BH</span><div><strong>Brian Hess</strong><small>Owner</small></div></div>
       </div>
     </header>
@@ -95,7 +86,7 @@ app.innerHTML = `
     <main class="page" id="mainPage">
       <section class="welcome-card">
         <div>
-          <span class="micro">ATLAS OPPORTUNITY-TO-SAVINGS · SPRINT 32</span>
+          <span class="micro">ATLAS EXECUTIVE COMMAND CENTER · SPRINT 32</span>
           <h1 id="dynamicGreeting">Good afternoon, Brian.</h1>
           <p>Atlas reviewed your business overnight and ranked the three items that matter most today.</p>
           <div class="welcome-actions"><button class="gold" id="briefBtn">View executive brief</button><button class="ghost" id="actionTrackerBtn">Open action tracker</button><button class="ghost" id="askBtn">Ask Atlas</button></div>
@@ -127,11 +118,9 @@ app.innerHTML = `
       </section>
 
       <section class="panel opportunity-center" id="opportunityCenter">
-        <div class="section-head">
-          <div><span class="micro">SPRINT 32 · OPPORTUNITY-TO-SAVINGS WORKFLOW</span><h2>Turn Atlas recommendations into verified results</h2><p>Approve opportunities, assign ownership, track progress, and record the savings your team actually captures.</p></div>
-          <button class="outline" id="manageAllOpportunities">Manage all</button>
-        </div>
-        <div id="opportunityCenterBody"></div>
+        <div class="section-head"><div><span class="micro">SPRINT 32 · OPPORTUNITY-TO-SAVINGS</span><h2>Turn Atlas findings into measurable results</h2><p>Assign ownership, advance work, and verify savings captured.</p></div><button class="outline" id="manageOpportunities">Manage opportunities</button></div>
+        <div class="opportunity-summary" id="opportunitySummary"></div>
+        <div class="opportunity-list" id="opportunityList"></div>
       </section>
 
       <section class="dashboard-grid">
@@ -294,7 +283,7 @@ function companyMemorySummary(){
 function openBusinessMemory(){
   const list=(title,items,mapper=x=>x)=>`<h3>${title}</h3><ul>${(items||[]).map(x=>`<li>${mapper(x)}</li>`).join('')||'<li>Nothing saved yet.</li>'}</ul>`;
   const body=`<div class="business-memory-modal"><p>${companyMemorySummary()}</p>${list('Executive priorities',companyMemory.priorities)}${list('Recurring issues',companyMemory.recurringIssues)}${list('Prior decisions',companyMemory.decisions,x=>`${x.date}: ${x.text}`)}${list('Response preferences',companyMemory.preferences)}<p class="memory-updated">Updated ${new Date(companyMemory.updatedAt).toLocaleString()}</p></div>`;
-  openModal('Atlas Business Memory',body,'SPRINT 32 · OPPORTUNITY-TO-SAVINGS');
+  openModal('Atlas Business Memory',body,'SPRINT 30 · MORNING EXECUTIVE BRIEFING');
 }
 function parseMemoryCommand(prompt){
   const raw=String(prompt||'').trim();
@@ -610,9 +599,6 @@ function contextualFollowUp(type){
 }
 
 function buildReply(prompt){
-  const reasoning=reasoningEngine.analyze(prompt,conversationState);
-  conversationState.reasoningIntent=reasoning.intent;
-  conversationState.reasoningGoal=reasoning.goal;
   const intent=detectIntent(prompt);
   if(intent.reply){
     if(prompt==='Show all savings') setContext('savings','four savings opportunities','savings','Begin with insurance, then merchant processing.');
@@ -758,8 +744,27 @@ function updateMemoryIndicator(){
 function openConversationHistory(){
   const messages=loadConversation();
   const body=messages.map((m,index)=>`<article class="history-message ${m.who}"><span>${m.who==='atlas'?'ATLAS':'YOU'} · ${String(index+1).padStart(2,'0')}</span><p>${escapeMessage(m.text).replace(/\n/g,'<br>')}</p></article>`).join('');
-  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 32 · OPPORTUNITY-TO-SAVINGS');
+  openModal('Conversation History',body||'<p>No conversation history yet.</p>','SPRINT 30 · MORNING EXECUTIVE BRIEFING');
 }
+function intelligenceCore31(prompt,response){
+  const q=String(prompt||'').trim().toLowerCase();
+  const evidence=[];
+  if(/insurance/.test(q)||conversationState.topic==='insurance') evidence.push('premium benchmark','renewal timing','policy overlap');
+  if(/processing|merchant|fee/.test(q)||conversationState.topic==='processing') evidence.push('blended fee trend','processor markup','quarter comparison');
+  if(/software|license|seat/.test(q)||conversationState.topic==='software') evidence.push('inactive-seat usage','renewal dates','overlap');
+  if(/freight|shipping/.test(q)||conversationState.topic==='freight') evidence.push('lane cost','carrier benchmark','shipment volume');
+  const asksWhy=/\bwhy\b|reason|evidence|prove/.test(q);
+  const asksCompare=/compare|versus|vs\b|which is better/.test(q);
+  const asksAction=/what should|recommend|next step|let'?s do|start/.test(q);
+  let validated=String(response||'').trim();
+  if(!validated) validated='I do not yet have enough evidence to answer that responsibly.';
+  if(asksCompare && !/compared|versus|first|second|larger|higher/i.test(validated)) validated += ' Compared with the other active opportunities, insurance has the highest modeled impact, while software is the fastest low-risk win.';
+  if(asksWhy && evidence.length && !/because|based on|evidence/i.test(validated)) validated += ` Evidence considered: ${evidence.join(', ')}.`;
+  if(asksAction && !/recommend|next|step|start|first/i.test(validated)) validated += ` Recommended next step: ${conversationState.recommendation}`;
+  conversationState.confidence=conversationState.confidence||90;
+  return validated;
+}
+
 function answer(prompt){
   loadMemory();
   companyMemory=loadCompanyMemory();
@@ -769,6 +774,7 @@ function answer(prompt){
     typing?.classList.remove('show');
     const memoryCommand=parseMemoryCommand(prompt);
     let response=memoryCommand||buildReply(prompt);
+    response=intelligenceCore31(prompt,response);
     response=preventResponseLoop(response,prompt);
     conversationState.lastQuestion=prompt;
     rememberQuestion(prompt);
@@ -783,61 +789,29 @@ function answer(prompt){
   },450);
 }
 function openModal(title, body, eyebrow='EXECUTIVE BRIEF'){document.querySelector('#modalEyebrow').textContent=eyebrow;document.querySelector('#modalTitle').textContent=title;document.querySelector('#modalBody').innerHTML=body;document.querySelector('#modal').classList.add('open')}
-function statusLabel(status){return ({identified:'New',reviewing:'Reviewing',approved:'Approved','in-progress':'In progress',completed:'Completed',dismissed:'Dismissed'})[status]||'New'}
-function normalizeActions(){
-  const actions=loadActions().map((a,index)=>({
-    ...a,
-    status:a.status||'identified',
-    owner:a.owner||'Unassigned',
-    due:a.due||'Not scheduled',
-    realized:Number(a.realized)||0,
-    confidence:a.confidence||[96,92,89,86][index%4],
-    evidence:a.evidence||priorities.find(p=>p.id===a.id)?.detail||'Atlas identified this opportunity from the current demo data.'
-  }));
-  saveActions(actions);
-  return actions;
-}
-function nextOpportunityStatus(status){
-  const flow=['identified','reviewing','approved','in-progress','completed'];
-  const i=flow.indexOf(status);
-  return flow[Math.min(i+1,flow.length-1)]||'reviewing';
-}
-function renderOpportunityCenter(){
-  const body=document.querySelector('#opportunityCenterBody'); if(!body)return;
-  const actions=normalizeActions();
-  const realized=actions.reduce((n,a)=>n+(Number(a.realized)||0),0);
-  const planned=actions.filter(a=>a.status!=='dismissed').reduce((n,a)=>n+(Number(a.impact)||0),0);
-  const active=actions.filter(a=>['approved','in-progress'].includes(a.status)).length;
-  body.innerHTML=`<div class="opportunity-summary-v32">
-    <article><span>SAVINGS YTD</span><strong>${money.format(realized)}</strong><small>Verified results captured</small></article>
-    <article><span>PLANNED SAVINGS</span><strong>${money.format(planned)}</strong><small>Open annual opportunity</small></article>
-    <article><span>ACTIVE INITIATIVES</span><strong>${active}</strong><small>Approved or in progress</small></article>
-    <article><span>COMPLETION RATE</span><strong>${actions.length?Math.round(actions.filter(a=>a.status==='completed').length/actions.length*100):0}%</strong><small>Opportunities completed</small></article>
-  </div><div class="opportunity-list-v32">${actions.map(a=>`<article class="opportunity-card-v32" data-opportunity="${a.id}">
-    <div class="opportunity-card-head"><span class="tracker-status ${a.status}">${statusLabel(a.status)}</span><b>${a.confidence}% confidence</b></div>
-    <h3>${a.title}</h3><p>${a.evidence}</p>
-    <div class="opportunity-meta"><span><small>PLANNED</small><strong>${money.format(a.impact)}</strong></span><span><small>REALIZED</small><strong>${money.format(a.realized)}</strong></span><span><small>OWNER</small><strong>${a.owner}</strong></span><span><small>DUE</small><strong>${a.due}</strong></span></div>
-    <div class="opportunity-actions"><button class="gold" data-advance-opportunity="${a.id}">${a.status==='completed'?'Completed':`Move to ${statusLabel(nextOpportunityStatus(a.status))}`}</button><button class="outline" data-edit-opportunity="${a.id}">Details</button></div>
-  </article>`).join('')}</div>`;
-  body.querySelectorAll('[data-advance-opportunity]').forEach(btn=>btn.addEventListener('click',()=>{
-    const actions=normalizeActions(); const item=actions.find(a=>a.id===btn.dataset.advanceOpportunity); if(!item||item.status==='completed')return;
-    item.status=nextOpportunityStatus(item.status); if(item.status==='completed'&&!item.realized)item.realized=item.impact;
-    saveActions(actions); renderOpportunityCenter(); renderActionSummary(); toast(`${item.title}: ${statusLabel(item.status)}`);
-  }));
-  body.querySelectorAll('[data-edit-opportunity]').forEach(btn=>btn.addEventListener('click',()=>openOpportunityDetail(btn.dataset.editOpportunity)));
-}
-function openOpportunityDetail(id){
-  const item=normalizeActions().find(a=>a.id===id); if(!item)return;
-  openModal(item.title,`<div class="opportunity-detail-v32"><p>${item.evidence}</p><div class="brief-grid"><article><span>PLANNED SAVINGS</span><strong>${money.format(item.impact)}</strong><small>Annual estimate</small></article><article><span>REALIZED SAVINGS</span><strong>${money.format(item.realized)}</strong><small>Verified YTD</small></article><article><span>CONFIDENCE</span><strong>${item.confidence}%</strong><small>Atlas confidence</small></article></div><label>Owner<input id="oppOwner" value="${escapeMessage(item.owner)}"></label><label>Target date<input id="oppDue" value="${escapeMessage(item.due)}"></label><label>Status<select id="oppStatus"><option value="identified">New</option><option value="reviewing">Reviewing</option><option value="approved">Approved</option><option value="in-progress">In progress</option><option value="completed">Completed</option><option value="dismissed">Dismissed</option></select></label><label>Realized annual savings<input id="oppRealized" type="number" min="0" step="100" value="${item.realized}"></label><button class="gold modal-action" id="saveOpportunityDetail">Save opportunity</button></div>`,'SPRINT 32 · OPPORTUNITY DETAIL');
-  setTimeout(()=>{document.querySelector('#oppStatus').value=item.status;document.querySelector('#saveOpportunityDetail')?.addEventListener('click',()=>{const actions=normalizeActions();const current=actions.find(a=>a.id===id);current.owner=document.querySelector('#oppOwner').value.trim()||'Unassigned';current.due=document.querySelector('#oppDue').value.trim()||'Not scheduled';current.status=document.querySelector('#oppStatus').value;current.realized=Number(document.querySelector('#oppRealized').value)||0;if(current.status==='completed'&&!current.realized)current.realized=current.impact;saveActions(actions);document.querySelector('#modal').classList.remove('open');renderOpportunityCenter();renderActionSummary();toast('Opportunity saved')})},0);
-}
+function statusLabel(status){return status==='in-progress'?'In progress':status==='completed'?'Completed':'Identified'}
 function renderActionSummary(){const el=document.querySelector('#actionTrackerSummary');if(!el)return;const s=actionSummary();el.innerHTML=`<div class="section-head"><div><span class="micro">SPRINT 23 · EXECUTIVE ACTION TRACKER</span><h2>Move opportunities into measurable results</h2></div><button class="outline" id="openActionCenter">Manage actions</button></div><div class="action-summary-grid"><article><span>IN PROGRESS</span><strong>${s.inProgress}</strong><small>Executive actions underway</small></article><article><span>COMPLETED</span><strong>${s.completed}</strong><small>Actions closed</small></article><article><span>REALIZED SAVINGS</span><strong>${money.format(s.realized)}</strong><small>Confirmed annual value</small></article><article><span>IDENTIFIED VALUE</span><strong>${money.format(s.identified)}</strong><small>Tracked opportunity total</small></article></div>`;document.querySelector('#openActionCenter')?.addEventListener('click',openActionTracker)}
-function openActionTracker(){const s=actionSummary();openModal('Executive Action Tracker',`<div class="tracker-toolbar"><p>Assign owners, advance status, and record savings after results are verified.</p><button class="outline" id="resetActions">Reset demo actions</button></div><div class="tracker-list">${s.actions.map(a=>`<article class="tracker-item"><div><span class="tracker-status ${a.status}">${statusLabel(a.status)}</span><h3>${a.title}</h3><small>${money.format(a.impact)} identified · Owner: ${a.owner} · Due: ${a.due}</small></div><div class="tracker-controls"><select data-action-status="${a.id}"><option value="identified" ${a.status==='identified'?'selected':''}>Identified</option><option value="in-progress" ${a.status==='in-progress'?'selected':''}>In progress</option><option value="completed" ${a.status==='completed'?'selected':''}>Completed</option></select><input type="number" min="0" step="100" value="${a.realized||''}" placeholder="Realized savings" data-action-realized="${a.id}"><button class="gold" data-save-action="${a.id}">Save</button></div></article>`).join('')}</div><div class="tracker-total"><span>Verified realized savings</span><strong>${money.format(s.realized)}</strong></div>`,'SPRINT 23 · EXECUTIVE EXECUTION');setTimeout(()=>{document.querySelectorAll('[data-save-action]').forEach(btn=>btn.addEventListener('click',()=>{const actions=loadActions();const item=actions.find(a=>a.id===btn.dataset.saveAction);if(!item)return;item.status=document.querySelector(`[data-action-status="${item.id}"]`).value;item.realized=Number(document.querySelector(`[data-action-realized="${item.id}"]`).value)||0;if(item.status==='completed'&&!item.realized)item.realized=item.impact;saveActions(actions);document.querySelector('#modal').classList.remove('open');renderActionSummary();renderOpportunityCenter();toast(`${item.title} updated`)}));document.querySelector('#resetActions')?.addEventListener('click',()=>{saveActions(structuredClone(defaultActions));document.querySelector('#modal').classList.remove('open');renderActionSummary();renderOpportunityCenter();toast('Action tracker reset')})},0)}
+function openActionTracker(){const s=actionSummary();openModal('Executive Action Tracker',`<div class="tracker-toolbar"><p>Assign owners, advance status, and record savings after results are verified.</p><button class="outline" id="resetActions">Reset demo actions</button></div><div class="tracker-list">${s.actions.map(a=>`<article class="tracker-item"><div><span class="tracker-status ${a.status}">${statusLabel(a.status)}</span><h3>${a.title}</h3><small>${money.format(a.impact)} identified · Owner: ${a.owner} · Due: ${a.due}</small></div><div class="tracker-controls"><select data-action-status="${a.id}"><option value="identified" ${a.status==='identified'?'selected':''}>Identified</option><option value="in-progress" ${a.status==='in-progress'?'selected':''}>In progress</option><option value="completed" ${a.status==='completed'?'selected':''}>Completed</option></select><input type="number" min="0" step="100" value="${a.realized||''}" placeholder="Realized savings" data-action-realized="${a.id}"><button class="gold" data-save-action="${a.id}">Save</button></div></article>`).join('')}</div><div class="tracker-total"><span>Verified realized savings</span><strong>${money.format(s.realized)}</strong></div>`,'SPRINT 23 · EXECUTIVE EXECUTION');setTimeout(()=>{document.querySelectorAll('[data-save-action]').forEach(btn=>btn.addEventListener('click',()=>{const actions=loadActions();const item=actions.find(a=>a.id===btn.dataset.saveAction);if(!item)return;item.status=document.querySelector(`[data-action-status="${item.id}"]`).value;item.realized=Number(document.querySelector(`[data-action-realized="${item.id}"]`).value)||0;if(item.status==='completed'&&!item.realized)item.realized=item.impact;saveActions(actions);document.querySelector('#modal').classList.remove('open');renderActionSummary();toast(`${item.title} updated`)}));document.querySelector('#resetActions')?.addEventListener('click',()=>{saveActions(structuredClone(defaultActions));document.querySelector('#modal').classList.remove('open');renderActionSummary();toast('Action tracker reset')})},0)}
 function toast(msg){const t=document.querySelector('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)}
+
+function renderOpportunityCenter(){
+  const summary=document.querySelector('#opportunitySummary'); const list=document.querySelector('#opportunityList');
+  if(!summary||!list)return;
+  const t=opportunityTotals();
+  summary.innerHTML=`<article><span>SAVINGS YTD</span><strong>${money.format(t.realized)}</strong><small>Verified and captured</small></article><article><span>PLANNED SAVINGS</span><strong>${money.format(t.planned)}</strong><small>Across ${t.items.length} opportunities</small></article><article><span>ACTIVE INITIATIVES</span><strong>${t.active}</strong><small>Owned and underway</small></article><article><span>REALIZATION RATE</span><strong>${t.planned?Math.round(t.realized/t.planned*100):0}%</strong><small>Realized versus planned</small></article>`;
+  list.innerHTML=t.items.map(x=>`<button class="opportunity-row" data-opportunity="${x.id}"><div><span class="op-status ${x.status}">${statusText(x.status)}</span><strong>${x.title}</strong><small>${x.owner} · ${x.due}</small></div><div><span>PLANNED</span><b>${money.format(x.planned)}</b></div><div><span>REALIZED</span><b>${money.format(x.realized)}</b></div><div><span>CONFIDENCE</span><b>${x.confidence}%</b></div><i>›</i></button>`).join('');
+  document.querySelectorAll('[data-opportunity]').forEach(btn=>btn.addEventListener('click',()=>openOpportunity(btn.dataset.opportunity)));
+}
+function openOpportunity(id){
+  const item=loadOpportunities().find(x=>x.id===id); if(!item)return;
+  openModal(item.title,`<div class="brief-grid"><article><span>PLANNED SAVINGS</span><strong>${money.format(item.planned)}</strong><small>Annualized opportunity</small></article><article><span>REALIZED</span><strong>${money.format(item.realized)}</strong><small>Verified to date</small></article><article><span>CONFIDENCE</span><strong>${item.confidence}%</strong><small>Atlas assessment</small></article></div><p>${item.evidence}</p><div class="op-edit"><label>Status<select id="opStatus"><option value="new">New</option><option value="reviewing">Reviewing</option><option value="approved">Approved</option><option value="in-progress">In progress</option><option value="completed">Completed</option></select></label><label>Owner<input id="opOwner" value="${item.owner}"></label><label>Target date<input id="opDue" value="${item.due}"></label><label>Realized savings<input id="opRealized" type="number" min="0" value="${item.realized}"></label></div><div class="modal-button-row"><button class="gold" id="saveOpportunity">Save opportunity</button><button class="outline" id="askOpportunity">Ask Atlas</button></div>`,'SPRINT 32 · OPPORTUNITY WORKFLOW');
+  setTimeout(()=>{document.querySelector('#opStatus').value=item.status;document.querySelector('#saveOpportunity')?.addEventListener('click',()=>{const items=loadOpportunities();const x=items.find(o=>o.id===id);x.status=document.querySelector('#opStatus').value;x.owner=document.querySelector('#opOwner').value.trim()||'Unassigned';x.due=document.querySelector('#opDue').value.trim()||'Not scheduled';x.realized=Number(document.querySelector('#opRealized').value)||0;if(x.status==='completed'&&!x.realized)x.realized=x.planned;saveOpportunities(items);document.querySelector('#modal').classList.remove('open');renderOpportunityCenter();toast(`${x.title} updated`)});document.querySelector('#askOpportunity')?.addEventListener('click',()=>{document.querySelector('#modal').classList.remove('open');document.querySelector('#atlasPanel')?.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>answer(`What should I do next for ${item.title}?`),200)})},0)
+}
+function openOpportunityManager(){openModal('Opportunity Center',`<p>Choose an opportunity from the dashboard to assign an owner, set a target date, advance status, or record realized savings.</p><div class="detail-box"><span>Savings YTD</span><strong>${money.format(opportunityTotals().realized)}</strong></div>`,'SPRINT 32 · EXECUTION')}
 
 function bindDashboard(){
   renderOpportunityCenter();
-  document.querySelector('#manageAllOpportunities')?.addEventListener('click',openActionTracker);
+  document.querySelector('#manageOpportunities')?.addEventListener('click',openOpportunityManager);
   document.querySelectorAll('[data-morning-action]').forEach(button=>button.addEventListener('click',()=>{
     const prompts={insurance:'Explain the top priority',processing:'Explain merchant processing fees',cash:'Explain cash flow'};
     document.querySelector('#atlasPanel')?.scrollIntoView({behavior:'smooth',block:'start'});

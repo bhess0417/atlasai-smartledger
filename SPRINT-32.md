@@ -1,10 +1,3 @@
-# Sprint 32 — Opportunity-to-Savings Workflow
+# Sprint 32 — Opportunity-to-Savings
 
-Built cumulatively on Sprint 31 Intelligence Core.
-
-- Opportunity Center with lifecycle status
-- Owner and target-date management
-- Planned versus realized savings
-- Savings YTD
-- Persistent browser storage
-- Sprint 31 intent and goal analysis retained in `src/main.js`
+Adds a persistent Opportunity Center with Savings YTD, planned versus realized savings, owner, target date, status lifecycle, confidence, evidence, and Ask Atlas handoff.
