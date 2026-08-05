@@ -1,3 +1,13 @@
+
+// Sprint 31 Intelligence Core
+const reasoningEngine = {
+ analyze(question, context){
+   const q=(question||'').toLowerCase();
+   const intent = /why|how/.test(q)?'explain':/compare/.test(q)?'compare':/plan|do it|start|let's/.test(q)?'act':'analyze';
+   return {intent, recommendation:'Always answer the question directly, explain why, then recommend the next action.'};
+ }
+};
+
 import './style.css';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -64,7 +74,7 @@ app.innerHTML = `
       <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name">Atlas AI Demo Company⌄</button></div>
       <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
-        <span class="release">ATLAS 30 · MORNING EXECUTIVE BRIEFING</span>
+        <span class="release">ATLAS 31 · MORNING EXECUTIVE BRIEFING</span>
         <div class="profile"><span>BH</span><div><strong>Brian Hess</strong><small>Owner</small></div></div>
       </div>
     </header>
