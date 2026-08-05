@@ -1,3 +1,24 @@
+// Sprint 31 Intelligence Core — retained in Sprint 32
+const reasoningEngine = {
+  analyze(question, context = {}) {
+    const text = String(question || '').trim();
+    const q = text.toLowerCase();
+    let intent = 'analyze';
+    if (/^(why|how come)|explain|reason/.test(q)) intent = 'explain';
+    else if (/compare|versus|vs\.?|difference/.test(q)) intent = 'compare';
+    else if (/let['’]?s do|start|approve|assign|complete|move forward|next step/.test(q)) intent = 'act';
+    else if (/how much|cost|save|impact|amount/.test(q)) intent = 'quantify';
+    else if (/which|what should|priority|focus/.test(q)) intent = 'prioritize';
+
+    const goal = context.goal || context.mission || 'Improve financial performance';
+    return {
+      intent,
+      goal,
+      answerStandard: 'Answer the question directly, cite the relevant business evidence, and recommend the next practical action.'
+    };
+  }
+};
+
 import './style.css';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -589,6 +610,9 @@ function contextualFollowUp(type){
 }
 
 function buildReply(prompt){
+  const reasoning=reasoningEngine.analyze(prompt,conversationState);
+  conversationState.reasoningIntent=reasoning.intent;
+  conversationState.reasoningGoal=reasoning.goal;
   const intent=detectIntent(prompt);
   if(intent.reply){
     if(prompt==='Show all savings') setContext('savings','four savings opportunities','savings','Begin with insurance, then merchant processing.');

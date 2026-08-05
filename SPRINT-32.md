@@ -1,3 +1,10 @@
 # Sprint 32 — Opportunity-to-Savings Workflow
 
-Adds a working Opportunity Center, Savings YTD, planned-versus-realized tracking, owner and due-date controls, status progression, confidence and evidence, and persistent browser storage.
+Built cumulatively on Sprint 31 Intelligence Core.
+
+- Opportunity Center with lifecycle status
+- Owner and target-date management
+- Planned versus realized savings
+- Savings YTD
+- Persistent browser storage
+- Sprint 31 intent and goal analysis retained in `src/main.js`
