@@ -1017,13 +1017,217 @@ function bindFunctionalPage(name){
   document.querySelectorAll('.settings-action').forEach(b=>b.addEventListener('click',()=>toast(`${b.textContent} opened`)));
 }
 
-function signOut(){
-  sessionStorage.removeItem('atlasSession');
-  app.innerHTML=`<div class="signed-out"><section class="signin-card"><span class="brand-mark large">A</span><span class="micro">ATLAS AI · SMARTLEDGER</span><h1>You are signed out.</h1><p>Choose how you would like to enter Atlas AI. Demo mode will never open automatically.</p><button class="gold" id="demoEntry">Enter demo workspace</button><button class="outline" id="accountEntry">Sign in to an account</button><small>Sprint 33 · Secure session cleared</small></section></div>`;
-  document.querySelector('#demoEntry').addEventListener('click',()=>location.reload());
-  document.querySelector('#accountEntry').addEventListener('click',()=>{document.querySelector('.signin-card').innerHTML=`<span class="brand-mark large">A</span><span class="micro">SECURE ACCOUNT ACCESS</span><h1>Sign in</h1><label class="signin-label">Email<input type="email" placeholder="you@company.com"></label><label class="signin-label">Password<input type="password" placeholder="••••••••"></label><button class="gold" id="signinSubmit">Sign in</button><button class="outline" id="backChoice">Back</button>`;document.querySelector('#signinSubmit').addEventListener('click',()=>toast('Account authentication will connect during production setup'));document.querySelector('#backChoice').addEventListener('click',()=>location.reload())});
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+async function supabaseAuthRequest(path, options = {}) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    throw new Error('Supabase configuration is missing.');
+  }
+
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, {
+    ...options,
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      data.msg ||
+      data.message ||
+      data.error_description ||
+      data.error ||
+      'Authentication failed.'
+    );
+  }
+
+  return data;
 }
 
+function showSignedOutScreen() {
+  app.innerHTML = `
+    <div class="signed-out">
+      <section class="signin-card">
+        <span class="brand-mark large">A</span>
+        <span class="micro">ATLAS AI · SMARTLEDGER</span>
+        <h1>You are signed out.</h1>
+        <p>Choose how you would like to enter Atlas AI. Demo mode will never open automatically.</p>
+
+        <button class="gold" id="demoEntry">Enter demo workspace</button>
+        <button class="outline" id="accountEntry">Sign in to an account</button>
+
+        <small>Sprint 34 · Secure account authentication</small>
+      </section>
+    </div>
+  `;
+
+  document.querySelector('#demoEntry')?.addEventListener('click', () => {
+    sessionStorage.setItem('atlasSession', 'demo');
+    location.reload();
+  });
+
+  document.querySelector('#accountEntry')?.addEventListener('click', showAccountSignIn);
+}
+
+function showAccountSignIn() {
+  app.innerHTML = `
+    <div class="signed-out">
+      <section class="signin-card">
+        <span class="brand-mark large">A</span>
+        <span class="micro">SECURE ACCOUNT ACCESS</span>
+        <h1>Sign in</h1>
+
+        <label class="signin-label">
+          Email
+          <input id="signinEmail" type="email" placeholder="you@company.com" autocomplete="email">
+        </label>
+
+        <label class="signin-label">
+          Password
+          <input id="signinPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+        </label>
+
+        <button class="gold" id="signinSubmit">Sign in</button>
+        <button class="outline" id="createAccount">Create new account</button>
+        <button class="outline" id="backChoice">Back</button>
+
+        <small id="authMessage"></small>
+      </section>
+    </div>
+  `;
+
+  const message = document.querySelector('#authMessage');
+
+  document.querySelector('#signinSubmit')?.addEventListener('click', async () => {
+    const email = document.querySelector('#signinEmail')?.value.trim();
+    const password = document.querySelector('#signinPassword')?.value || '';
+
+    if (!email || !password) {
+      message.textContent = 'Enter your email and password.';
+      return;
+    }
+
+    message.textContent = 'Signing in...';
+
+    try {
+      const data = await supabaseAuthRequest('token?grant_type=password', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      });
+
+      sessionStorage.setItem('atlasSession', JSON.stringify(data));
+      location.reload();
+    } catch (error) {
+      message.textContent = error.message;
+    }
+  });
+
+  document.querySelector('#createAccount')?.addEventListener('click', showCreateAccount);
+  document.querySelector('#backChoice')?.addEventListener('click', showSignedOutScreen);
+}
+
+function showCreateAccount() {
+  app.innerHTML = `
+    <div class="signed-out">
+      <section class="signin-card">
+        <span class="brand-mark large">A</span>
+        <span class="micro">CREATE SECURE ACCOUNT</span>
+        <h1>Create account</h1>
+
+        <label class="signin-label">
+          Email
+          <input id="signupEmail" type="email" placeholder="you@company.com" autocomplete="email">
+        </label>
+
+        <label class="signin-label">
+          Password
+          <input id="signupPassword" type="password" placeholder="At least 6 characters" autocomplete="new-password">
+        </label>
+
+        <button class="gold" id="signupSubmit">Create account</button>
+        <button class="outline" id="backToSignin">Back to sign in</button>
+
+        <small id="signupMessage"></small>
+      </section>
+    </div>
+  `;
+
+  const message = document.querySelector('#signupMessage');
+
+  document.querySelector('#signupSubmit')?.addEventListener('click', async () => {
+    const email = document.querySelector('#signupEmail')?.value.trim();
+    const password = document.querySelector('#signupPassword')?.value || '';
+
+    if (!email || !password) {
+      message.textContent = 'Enter an email and password.';
+      return;
+    }
+
+    if (password.length < 6) {
+      message.textContent = 'Password must be at least 6 characters.';
+      return;
+    }
+
+    message.textContent = 'Creating account...';
+
+    try {
+      const data = await supabaseAuthRequest('signup', {
+        method: 'POST',
+        body: JSON.stringify({
+          email,
+          password,
+          options: {
+            emailRedirectTo: 'https://atlasaiusa.com'
+          }
+        })
+      });
+
+      if (data.access_token) {
+        sessionStorage.setItem('atlasSession', JSON.stringify(data));
+        location.reload();
+        return;
+      }
+
+      message.textContent = 'Account created. Check your email to confirm your address, then sign in.';
+    } catch (error) {
+      message.textContent = error.message;
+    }
+  });
+
+  document.querySelector('#backToSignin')?.addEventListener('click', showAccountSignIn);
+}
+
+async function signOut() {
+  const stored = sessionStorage.getItem('atlasSession');
+
+  try {
+    if (stored && stored !== 'demo') {
+      const session = JSON.parse(stored);
+
+      if (session?.access_token) {
+        await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.warn('Remote sign out failed:', error);
+  }
+
+  sessionStorage.removeItem('atlasSession');
+  showSignedOutScreen();
+}
 bindDashboard();
 // Scope navigation to the sidebar and delegate clicks so it remains reliable
 // after dashboard content is replaced and restored.
