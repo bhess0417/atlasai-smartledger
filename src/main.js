@@ -57,13 +57,27 @@ const intelligence = [
   ['Rates', 'Borrowing-cost outlook is stable for the next planning cycle.', '2 hr ago']
 ];
 
+const CONNECTORS_KEY='atlasConnect33';
+const connectorDefaults=[
+  {id:'gmail',name:'Gmail',category:'Email',icon:'G',status:'not-connected',lastSync:'Never',health:'Ready',permission:'Read, summarize, and draft only',description:'Surface important customer, vendor, invoice, renewal, and government messages.'},
+  {id:'microsoft',name:'Microsoft 365',category:'Email',icon:'M',status:'not-connected',lastSync:'Never',health:'Ready',permission:'Read, summarize, and draft only',description:'Connect Outlook and Microsoft 365 business mailboxes.'},
+  {id:'government',name:'Government Notices',category:'Compliance',icon:'🏛',status:'demo',lastSync:'Today · 7:45 AM',health:'Monitoring',permission:'Owner-selected notices only',description:'Track tax, licensing, annual-report, SBA, and compliance reminders where supported.'},
+  {id:'internet',name:'Internet Intelligence',category:'Research',icon:'◎',status:'demo',lastSync:'18 min ago',health:'Live demo',permission:'Public sources with citations',description:'Monitor pricing benchmarks, industry signals, competitors, fuel, rates, and regulations.'},
+  {id:'banking',name:'Banking',category:'Financial',icon:'$',status:'roadmap',lastSync:'Not enabled',health:'Planned',permission:'Read-only transaction access',description:'Future secure bank and credit-card data connections.'},
+  {id:'cloud',name:'Cloud Storage',category:'Documents',icon:'☁',status:'roadmap',lastSync:'Not enabled',health:'Planned',permission:'Selected folders only',description:'Future document intake from Google Drive, OneDrive, and Dropbox.'}
+];
+function loadConnectors(){try{const value=JSON.parse(localStorage.getItem(CONNECTORS_KEY)||'null');return Array.isArray(value)&&value.length?value:structuredClone(connectorDefaults)}catch{return structuredClone(connectorDefaults)}}
+function saveConnectors(items){localStorage.setItem(CONNECTORS_KEY,JSON.stringify(items))}
+function connectorStatusText(value){return ({'not-connected':'Not connected',connected:'Connected',demo:'Demo active',roadmap:'Roadmap'})[value]||value}
+function connectorSummary(){const items=loadConnectors();return {items,connected:items.filter(x=>x.status==='connected'||x.status==='demo').length,available:items.filter(x=>x.status!=='roadmap').length,important:4,awaiting:3}}
+
 const app = document.querySelector('#app');
 app.innerHTML = `
 <div class="app-shell">
   <aside class="sidebar">
-    <div class="brand"><span class="brand-mark">A</span><div><strong>ATLAS AI</strong><small>SMARTLEDGER</small></div></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 72 72" role="img"><defs><linearGradient id="atlasBlue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#65c9ff"/><stop offset="1" stop-color="#1687ff"/></linearGradient></defs><path d="M12 58 34 13h8l19 45h-12l-4-11H27l-5 11H12Zm19-21h11l-5-14-6 14Z" fill="url(#atlasBlue)"/><path d="M9 49c15 3 34-1 51-15" fill="none" stroke="#4bbdff" stroke-width="4" stroke-linecap="round"/><path d="m57 13 2.1 5.3L65 20l-5.9 1.7L57 27l-2.1-5.3L49 20l5.9-1.7L57 13Z" fill="#fff"/></svg></span><div><strong>ATLAS<span>AI</span>USA</strong><small>SMARTLEDGER</small></div></div>
     <nav class="sidebar-nav">
-      ${['Dashboard','Financial Imports','Transactions','Import History','Payments & Billing','Settings'].map((x,i)=>`<button class="nav-item ${i===0?'active':''}" data-nav="${x}"><span>${['⌂','⇧','≡','◷','$','⚙'][i]}</span>${x}</button>`).join('')}
+      ${['Dashboard','Atlas Connect','Financial Imports','Transactions','Import History','Payments & Billing','Settings'].map((x,i)=>`<button class="nav-item ${i===0?'active':''}" data-nav="${x}"><span>${['⌂','↗','⇧','≡','◷','$','⚙'][i]}</span>${x}</button>`).join('')}
     </nav>
     <div class="sidebar-bottom">
       <div class="privacy-card"><span>◇</span><div><strong>Private processing</strong><small>Files remain in your browser</small></div></div>
@@ -76,7 +90,7 @@ app.innerHTML = `
       <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name">Atlas AI Demo Company⌄</button></div>
       <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
-        <span class="release">ATLAS 32 · INTELLIGENCE + OPPORTUNITY CENTER</span>
+        <span class="release">ATLAS 33 · ATLAS CONNECT</span>
         <div class="profile"><span>BH</span><div><strong>Brian Hess</strong><small>Owner</small></div></div>
       </div>
     </header>
@@ -86,7 +100,7 @@ app.innerHTML = `
     <main class="page" id="mainPage">
       <section class="welcome-card">
         <div>
-          <span class="micro">ATLAS EXECUTIVE COMMAND CENTER · SPRINT 32</span>
+          <span class="micro">ATLAS EXECUTIVE COMMAND CENTER · SPRINT 33</span>
           <h1 id="dynamicGreeting">Good afternoon, Brian.</h1>
           <p>Atlas reviewed your business overnight and ranked the three items that matter most today.</p>
           <div class="welcome-actions"><button class="gold" id="briefBtn">View executive brief</button><button class="ghost" id="actionTrackerBtn">Open action tracker</button><button class="ghost" id="askBtn">Ask Atlas</button></div>
@@ -121,6 +135,21 @@ app.innerHTML = `
         <div class="section-head"><div><span class="micro">SPRINT 32 · OPPORTUNITY-TO-SAVINGS</span><h2>Turn Atlas findings into measurable results</h2><p>Assign ownership, advance work, and verify savings captured.</p></div><button class="outline" id="manageOpportunities">Manage opportunities</button></div>
         <div class="opportunity-summary" id="opportunitySummary"></div>
         <div class="opportunity-list" id="opportunityList"></div>
+      </section>
+
+      <section class="panel connect-overview" id="connectOverview">
+        <div class="section-head"><div><span class="micro">SPRINT 33 · ATLAS CONNECT</span><h2>Your business signals in one command center</h2><p>Email, government notices, and trusted internet intelligence can feed the morning brief and Atlas recommendations.</p></div><button class="gold" id="openAtlasConnect">Open Atlas Connect</button></div>
+        <div class="connect-overview-grid">
+          <article><span>IMPORTANT EMAIL</span><strong>4</strong><small>Messages needing attention</small></article>
+          <article><span>AWAITING REPLY</span><strong>3</strong><small>Customer or vendor follow-ups</small></article>
+          <article><span>GOVERNMENT</span><strong>1</strong><small>Annual-report reminder</small></article>
+          <article><span>EXTERNAL SIGNALS</span><strong>5</strong><small>Pricing and market updates</small></article>
+        </div>
+        <div class="connect-alerts">
+          <button data-connect-insight="vendor"><span>Vendor notice</span><strong>Northstar proposes an 8% rate increase</strong><small>Atlas recommends requesting competing pricing before renewal.</small></button>
+          <button data-connect-insight="payment"><span>Customer payment</span><strong>Horizon Retail promised payment Friday</strong><small>$42,600 expected; update cash forecast after receipt.</small></button>
+          <button data-connect-insight="government"><span>Government reminder</span><strong>State annual report due in 21 days</strong><small>Prepare filing details and confirm registered-agent information.</small></button>
+        </div>
       </section>
 
       <section class="dashboard-grid">
@@ -210,6 +239,14 @@ app.innerHTML = `
 const dashboardHTML = document.querySelector('#mainPage').innerHTML;
 
 const pageTemplates = {
+  'Atlas Connect': `
+    <section class="page-heading"><div><span class="micro">ATLAS CONNECT · SPRINT 33</span><h1>Connect the systems that run your business</h1><p>Choose what Atlas may read, summarize, and monitor. Sending and account changes always require owner approval.</p></div><button class="outline ask-page" data-page="Atlas Connect">Ask Atlas about connections</button></section>
+    <section class="connect-summary panel"><div><div><span class="micro">CONNECTION HEALTH</span><h2>One permission center for every business signal</h2><p>Atlas separates company data, external research, and recommendations so owners can verify every decision.</p></div><div class="connect-summary-stats"><article><span>ACTIVE DEMOS</span><strong id="connectedCount">2</strong><small>Government + internet</small></article><article><span>AVAILABLE NOW</span><strong>4</strong><small>Email and intelligence</small></article><article><span>OWNER CONTROL</span><strong>100%</strong><small>Permission-based access</small></article></div></div></section>
+    <section class="connector-grid" id="connectorGrid"></section>
+    <section class="page-grid two-up connect-detail-grid">
+      <article class="panel"><div class="section-head"><div><span class="micro">COMMUNICATIONS</span><h2>What Atlas would surface</h2></div><span class="ready-pill">DEMO PREVIEW</span></div><div class="communication-list"><button data-connect-insight="vendor"><strong>Vendor notices</strong><span>2</span><small>One proposed price increase</small></button><button data-connect-insight="payment"><strong>Payment promises</strong><span>4</span><small>$42,600 expected Friday</small></button><button data-connect-insight="contract"><strong>Contracts</strong><span>1</span><small>Insurance renewal approaching</small></button><button data-connect-insight="reply"><strong>Needs reply</strong><span>3</span><small>Drafts can be prepared for approval</small></button></div></article>
+      <article class="panel"><div class="section-head"><div><span class="micro">INTERNET INTELLIGENCE</span><h2>Evidence beyond the ledger</h2></div><span class="pulse">● SOURCED</span></div><div class="internet-signal-list"><article><strong>Commercial insurance</strong><span>Market pricing appears 6–9% below the proposed renewal.</span><small>Benchmark preview</small></article><article><strong>Regional diesel</strong><span>Prices are trending 2.1% lower this month.</span><small>Market signal preview</small></article><article><strong>Compliance</strong><span>State annual-report deadline is 21 days away.</span><small>Government reminder preview</small></article></div></article>
+    </section>`,
   'Financial Imports': `
     <section class="page-heading"><div><span class="micro">FINANCIAL DATA HUB</span><h1>Financial Imports</h1><p>Bring bank, credit-card, and accounting activity into SmartLedger.</p></div><button class="outline ask-page" data-page="Financial Imports">Ask Atlas about imports</button></section>
     <section class="page-grid two-up">
@@ -811,6 +848,8 @@ function openOpportunityManager(){openModal('Opportunity Center',`<p>Choose an o
 
 function bindDashboard(){
   renderOpportunityCenter();
+  document.querySelector('#openAtlasConnect')?.addEventListener('click',()=>showPage('Atlas Connect'));
+  document.querySelectorAll('[data-connect-insight]').forEach(btn=>btn.addEventListener('click',()=>openConnectInsight(btn.dataset.connectInsight)));
   document.querySelector('#manageOpportunities')?.addEventListener('click',openOpportunityManager);
   document.querySelectorAll('[data-morning-action]').forEach(button=>button.addEventListener('click',()=>{
     const prompts={insurance:'Explain the top priority',processing:'Explain merchant processing fees',cash:'Explain cash flow'};
@@ -890,7 +929,7 @@ function exportTransactionsCSV(){
 function invoiceHTML(invoice='INV-2026-008', date='August 29, 2026'){
   return `<!doctype html><html><head><meta charset="utf-8"><title>${invoice}</title><style>body{font-family:Arial,sans-serif;max-width:760px;margin:48px auto;color:#172235}header{display:flex;justify-content:space-between;border-bottom:2px solid #caa85e;padding-bottom:18px}.brand{font-size:28px;font-weight:800}.muted{color:#687386}.box{margin-top:32px;padding:24px;background:#f5f7fa;border-radius:12px}.line{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #dce2ea}.total{font-size:24px;font-weight:800}.paid{color:#19764d;font-weight:700}</style></head><body><header><div><div class="brand">ATLAS AI</div><div class="muted">SmartLedger</div></div><div><strong>INVOICE</strong><div>${invoice}</div></div></header><div class="box"><div><strong>Bill to</strong><p>Atlas Manufacturing Group<br>Demo Workspace</p></div><div class="line"><span>Professional Plan — monthly subscription</span><span>$299.00</span></div><div class="line"><span>Invoice date</span><span>${date}</span></div><div class="line total"><span>Total</span><span>$299.00</span></div><p class="paid">Paid / scheduled by Visa ending 4321</p></div><p class="muted">This is a demonstration invoice generated by Atlas AI Sprint 23.</p></body></html>`;
 }
-
+'
 function handleBillingAction(action){
   if(action==='Upgrade plan'){
     openModal('Choose your SmartLedger plan',`<div class="brief-grid"><article><span>ESSENTIAL</span><strong>$149/mo</strong><small>1 company · 3 users</small></article><article><span>PROFESSIONAL</span><strong>$299/mo</strong><small>3 companies · 10 users</small></article><article><span>ENTERPRISE</span><strong>Custom</strong><small>Unlimited scale</small></article></div><p>Your current Professional Plan is highlighted. Plan changes are demonstrated here and will connect to secure checkout in production.</p><button class="gold modal-action" id="confirmUpgrade">Select Enterprise</button>`,'PLAN MANAGEMENT');
@@ -917,6 +956,7 @@ function handleBillingAction(action){
 
 
 const pageIntelligence = {
+  'Atlas Connect': ['Gmail and Microsoft 365 are ready for secure OAuth setup.', 'One government reminder and five external market signals are active in demo mode.', 'Atlas will draft responses but owner approval remains required before sending.'],
   'Financial Imports': ['3 recent imports completed successfully.', '9,842 records are available for analysis.', 'No import errors require attention.'],
   'Transactions': ['Two transactions are marked for review.', 'Merchant processing contains a $14,800 annual savings opportunity.', 'Insurance is the highest-impact category today.'],
   'Import History': ['All 12 imports completed successfully.', 'The latest operating-account import added 4,281 records.', 'No duplicate import was detected.'],
@@ -942,7 +982,28 @@ function inspectTransaction(row){
   setTimeout(()=>document.querySelector('#askTransaction')?.addEventListener('click',()=>{document.querySelector('#modal').classList.remove('open');showPage('Dashboard');setTimeout(()=>answer(`Explain the ${vendor} transaction for ${amount}`),50)}),0);
 }
 
+function renderConnectors(){
+  const grid=document.querySelector('#connectorGrid');
+  if(!grid)return;
+  const items=loadConnectors();
+  grid.innerHTML=items.map(item=>`<article class="panel connector-card ${item.status}"><header><span class="connector-icon">${item.icon}</span><div><small>${item.category}</small><h2>${item.name}</h2></div><span class="connector-status ${item.status}">${connectorStatusText(item.status)}</span></header><p>${item.description}</p><div class="connector-meta"><div><span>LAST SYNC</span><strong>${item.lastSync}</strong></div><div><span>HEALTH</span><strong>${item.health}</strong></div></div><div class="permission-box"><span>PERMISSION</span><strong>${item.permission}</strong></div><button class="${item.status==='connected'?'outline':'gold'} connector-action" data-connector="${item.id}" ${item.status==='roadmap'?'disabled':''}>${item.status==='connected'?'Disconnect':item.status==='demo'?'Review demo':item.status==='roadmap'?'Coming soon':`Connect ${item.name}`}</button></article>`).join('');
+  document.querySelectorAll('[data-connector]').forEach(btn=>btn.addEventListener('click',()=>handleConnector(btn.dataset.connector)));
+  const count=document.querySelector('#connectedCount');if(count)count.textContent=connectorSummary().connected;
+}
+function handleConnector(id){
+  const items=loadConnectors();const item=items.find(x=>x.id===id);if(!item)return;
+  if(item.status==='demo'){openModal(`${item.name} demo connection`,`<p>${item.description}</p><div class="detail-box"><span>Current permission</span><strong>${item.permission}</strong></div><p>Live service activation will use secure OAuth or an agency-supported connection. Atlas will never expose credentials in the browser.</p>`,'ATLAS CONNECT · DEMO');return}
+  if(item.status==='connected'){item.status='not-connected';item.lastSync='Disconnected';item.health='Ready';saveConnectors(items);renderConnectors();toast(`${item.name} disconnected`);return}
+  openModal(`Connect ${item.name}`,`<p>This Sprint 33 experience confirms the permission and connection workflow. The live OAuth authorization will be activated in the next integration phase.</p><div class="permission-review"><article><span>READ</span><strong>Business messages and selected metadata</strong></article><article><span>ANALYZE</span><strong>Summaries, deadlines, payment promises, and opportunities</strong></article><article><span>PROTECT</span><strong>No sending or account changes without owner approval</strong></article></div><button class="gold modal-action" id="confirmConnector">Activate demo connection</button>`,'ATLAS CONNECT · OWNER PERMISSION');
+  setTimeout(()=>document.querySelector('#confirmConnector')?.addEventListener('click',()=>{const latest=loadConnectors();const target=latest.find(x=>x.id===id);target.status='connected';target.lastSync='Just now';target.health='Healthy';saveConnectors(latest);document.querySelector('#modal').classList.remove('open');renderConnectors();toast(`${target.name} demo connection active`)}),0)
+}
+function openConnectInsight(type){
+  const insights={vendor:['Vendor price increase detected','Northstar Merchant Services proposed an 8% increase. Atlas recommends requesting competing rates before accepting the renewal.'],payment:['Customer payment promise','Horizon Retail committed to paying $42,600 on Friday. Atlas recommends updating the short-term cash forecast after the deposit clears.'],government:['Government deadline','The state annual report is due in 21 days. Confirm registered-agent details and prepare the filing this week.'],contract:['Contract renewal','The commercial insurance renewal remains the highest-impact time-sensitive opportunity.'],reply:['Three messages need replies','Atlas can prepare draft responses for owner review; sending remains disabled until approved.']};const value=insights[type]||['Atlas Connect insight','Atlas identified a business signal that deserves review.'];openModal(value[0],`<p>${value[1]}</p><button class="gold modal-action" id="askConnectInsight">Discuss with Atlas</button>`,'ATLAS CONNECT · BUSINESS SIGNAL');setTimeout(()=>document.querySelector('#askConnectInsight')?.addEventListener('click',()=>{document.querySelector('#modal').classList.remove('open');showPage('Dashboard');setTimeout(()=>answer(value[0]),60)}),0)
+}
+function bindAtlasConnect(){renderConnectors();document.querySelectorAll('[data-connect-insight]').forEach(btn=>btn.addEventListener('click',()=>openConnectInsight(btn.dataset.connectInsight)))}
+
 function bindFunctionalPage(name){
+  if(name==='Atlas Connect') bindAtlasConnect();
   document.querySelectorAll('.ask-page').forEach(b=>b.addEventListener('click',()=>askAtlasAboutPage(b.dataset.page)));
   document.querySelectorAll('.transaction-row').forEach(r=>r.addEventListener('click',()=>inspectTransaction(r)));
   document.querySelectorAll('[data-import]').forEach(b=>b.addEventListener('click',()=>openModal(`Import ${b.dataset.import}`,`<p>Selecting a real file will be connected in the production data-integration phase. This demo confirms the complete import workflow and interface.</p><button class="gold modal-action" id="simulateImport">Simulate successful import</button>`,'FINANCIAL IMPORT')));
@@ -958,7 +1019,7 @@ function bindFunctionalPage(name){
 
 function signOut(){
   sessionStorage.removeItem('atlasSession');
-  app.innerHTML=`<div class="signed-out"><section class="signin-card"><span class="brand-mark large">A</span><span class="micro">ATLAS AI · SMARTLEDGER</span><h1>You are signed out.</h1><p>Choose how you would like to enter Atlas AI. Demo mode will never open automatically.</p><button class="gold" id="demoEntry">Enter demo workspace</button><button class="outline" id="accountEntry">Sign in to an account</button><small>Sprint 32 · Secure session cleared</small></section></div>`;
+  app.innerHTML=`<div class="signed-out"><section class="signin-card"><span class="brand-mark large">A</span><span class="micro">ATLAS AI · SMARTLEDGER</span><h1>You are signed out.</h1><p>Choose how you would like to enter Atlas AI. Demo mode will never open automatically.</p><button class="gold" id="demoEntry">Enter demo workspace</button><button class="outline" id="accountEntry">Sign in to an account</button><small>Sprint 33 · Secure session cleared</small></section></div>`;
   document.querySelector('#demoEntry').addEventListener('click',()=>location.reload());
   document.querySelector('#accountEntry').addEventListener('click',()=>{document.querySelector('.signin-card').innerHTML=`<span class="brand-mark large">A</span><span class="micro">SECURE ACCOUNT ACCESS</span><h1>Sign in</h1><label class="signin-label">Email<input type="email" placeholder="you@company.com"></label><label class="signin-label">Password<input type="password" placeholder="••••••••"></label><button class="gold" id="signinSubmit">Sign in</button><button class="outline" id="backChoice">Back</button>`;document.querySelector('#signinSubmit').addEventListener('click',()=>toast('Account authentication will connect during production setup'));document.querySelector('#backChoice').addEventListener('click',()=>location.reload())});
 }
