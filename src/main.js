@@ -1228,7 +1228,7 @@ async function signOut() {
   sessionStorage.removeItem('atlasSession');
   showSignedOutScreen();
 }
-bconst accountSession = localStorage.getItem('atlasSession');
+const accountSession = localStorage.getItem('atlasSession');
 const demoSession = sessionStorage.getItem('atlasSession');
 
 if (accountSession) {
