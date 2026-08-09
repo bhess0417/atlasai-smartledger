@@ -1146,7 +1146,7 @@ function showAccountSignIn() {
         body: JSON.stringify({ email, password })
       });
 
-      localStorage.setitem('atlasSession', JSON.stringify(data));
+      localStorage.setItem('atlasSession', JSON.stringify(data));
       const workspaces = await supabaseWorkspaceRequest(
   `workspaces?user_id=eq.${data.user.id}&select=*`,
   data
