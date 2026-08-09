@@ -217,7 +217,7 @@ app.innerHTML = `
           <div class="chat" id="chat"></div>
           <div class="typing" id="typing"><span></span><span></span><span></span><em>Atlas is analyzing…</em></div>
           <div class="quick-prompts">
-            <button data-prompt="Explain the top priority">Explain the top priority</button>
+            <button data-prompt="Explain the top priority">Explain the top priory</button>
             <button data-prompt="Show all savings">Show all savings</button>
             <button data-prompt="What should I do first?">What should I do first?</button>
             <button data-prompt="What changed since yesterday?">What changed since yesterday?</button>
@@ -1050,6 +1050,31 @@ async function supabaseAuthRequest(path, options = {}) {
   return data;
 }
 
+async function supabaseWorkspaceRequest(path, session, options = {}) {
+  if (!session?.access_token) {
+    throw new Error('A signed-in account is required.');
+  }
+
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+
+  if (!response.ok) {
+    throw new Error(data?.message || data?.error || 'Workspace request failed.');
+  }
+
+  return data;
+}
+
 function showSignedOutScreen() {
   app.innerHTML = `
     <div class="signed-out">
@@ -1121,8 +1146,26 @@ function showAccountSignIn() {
         body: JSON.stringify({ email, password })
       });
 
-      sessionStorage.setItem('atlasSession', JSON.stringify(data));
+      localstorage.setitem('atlasSession', JSON.stringify(data));
+      const workspaces = await supabaseWorkspaceRequest(
+  `workspaces?user_id=eq.${data.user.id}&select=*`,
+  data
+);if (!workspaces?.length) {
+  await supabaseWorkspaceRequest('workspaces', data, {
+    method: 'POST',
+    headers: {
+      Prefer: 'return=representation'
+    },
+    body: JSON.stringify({
+      user_id: data.user.id,
+      name: email.split('@')[0] + "'s Workspace",
+      data: {}
+    })
+  });
+}
+
       location.reload();
+
     } catch (error) {
       message.textContent = error.message;
     }
