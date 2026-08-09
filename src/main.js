@@ -100,7 +100,7 @@ app.innerHTML = `
     <main class="page" id="mainPage">
       <section class="welcome-card">
         <div>
-          <span class="micro">ATLAS EXECUTIVE COMMAND CENTER · SPRINT 34</span>
+          <span class="micro">ATLAS EXECUTIVE COMMAND CENTER · SPRINT 35</span>
           <h1 id="dynamicGreeting">Good afternoon, Brian.</h1>
           <p>Atlas reviewed your business overnight and ranked the three items that matter most today.</p>
           <div class="welcome-actions"><button class="gold" id="briefBtn">View executive brief</button><button class="ghost" id="actionTrackerBtn">Open action tracker</button><button class="ghost" id="askBtn">Ask Atlas</button></div>
@@ -138,7 +138,7 @@ app.innerHTML = `
       </section>
 
       <section class="panel connect-overview" id="connectOverview">
-        <div class="section-head"><div><span class="micro">SPRINT 34 · ATLAS CONNECT</span><h2>Your business signals in one command center</h2><p>Email, government notices, and trusted internet intelligence can feed the morning brief and Atlas recommendations.</p></div><button class="gold" id="openAtlasConnect">Open Atlas Connect</button></div>
+        <div class="section-head"><div><span class="micro">SPRINT 35 · ATLAS CONNECT</span><h2>Your business signals in one command center</h2><p>Email, government notices, and trusted internet intelligence can feed the morning brief and Atlas recommendations.</p></div><button class="gold" id="openAtlasConnect">Open Atlas Connect</button></div>
         <div class="connect-overview-grid">
           <article><span>IMPORTANT EMAIL</span><strong>4</strong><small>Messages needing attention</small></article>
           <article><span>AWAITING REPLY</span><strong>3</strong><small>Customer or vendor follow-ups</small></article>
@@ -240,7 +240,7 @@ const dashboardHTML = document.querySelector('#mainPage').innerHTML;
 
 const pageTemplates = {
   'Atlas Connect': `
-    <section class="page-heading"><div><span class="micro">ATLAS CONNECT · SPRINT 34</span><h1>Connect the systems that run your business</h1><p>Choose what Atlas may read, summarize, and monitor. Sending and account changes always require owner approval.</p></div><button class="outline ask-page" data-page="Atlas Connect">Ask Atlas about connections</button></section>
+    <section class="page-heading"><div><span class="micro">ATLAS CONNECT · SPRINT 35</span><h1>Connect the systems that run your business</h1><p>Choose what Atlas may read, summarize, and monitor. Sending and account changes always require owner approval.</p></div><button class="outline ask-page" data-page="Atlas Connect">Ask Atlas about connections</button></section>
     <section class="connect-summary panel"><div><div><span class="micro">CONNECTION HEALTH</span><h2>One permission center for every business signal</h2><p>Atlas separates company data, external research, and recommendations so owners can verify every decision.</p></div><div class="connect-summary-stats"><article><span>ACTIVE DEMOS</span><strong id="connectedCount">2</strong><small>Government + internet</small></article><article><span>AVAILABLE NOW</span><strong>4</strong><small>Email and intelligence</small></article><article><span>OWNER CONTROL</span><strong>100%</strong><small>Permission-based access</small></article></div></div></section>
     <section class="connector-grid" id="connectorGrid"></section>
     <section class="page-grid two-up connect-detail-grid">
@@ -994,7 +994,7 @@ function handleConnector(id){
   const items=loadConnectors();const item=items.find(x=>x.id===id);if(!item)return;
   if(item.status==='demo'){openModal(`${item.name} demo connection`,`<p>${item.description}</p><div class="detail-box"><span>Current permission</span><strong>${item.permission}</strong></div><p>Live service activation will use secure OAuth or an agency-supported connection. Atlas will never expose credentials in the browser.</p>`,'ATLAS CONNECT · DEMO');return}
   if(item.status==='connected'){item.status='not-connected';item.lastSync='Disconnected';item.health='Ready';saveConnectors(items);renderConnectors();toast(`${item.name} disconnected`);return}
-  openModal(`Connect ${item.name}`,`<p>This Sprint 34 experience confirms the permission and connection workflow. The live OAuth authorization will be activated in the next integration phase.</p><div class="permission-review"><article><span>READ</span><strong>Business messages and selected metadata</strong></article><article><span>ANALYZE</span><strong>Summaries, deadlines, payment promises, and opportunities</strong></article><article><span>PROTECT</span><strong>No sending or account changes without owner approval</strong></article></div><button class="gold modal-action" id="confirmConnector">Activate demo connection</button>`,'ATLAS CONNECT · OWNER PERMISSION');
+  openModal(`Connect ${item.name}`,`<p>This Sprint 35 experience confirms the permission and connection workflow. The live OAuth authorization will be activated in the next integration phase.</p><div class="permission-review"><article><span>READ</span><strong>Business messages and selected metadata</strong></article><article><span>ANALYZE</span><strong>Summaries, deadlines, payment promises, and opportunities</strong></article><article><span>PROTECT</span><strong>No sending or account changes without owner approval</strong></article></div><button class="gold modal-action" id="confirmConnector">Activate demo connection</button>`,'ATLAS CONNECT · OWNER PERMISSION');
   setTimeout(()=>document.querySelector('#confirmConnector')?.addEventListener('click',()=>{const latest=loadConnectors();const target=latest.find(x=>x.id===id);target.status='connected';target.lastSync='Just now';target.health='Healthy';saveConnectors(latest);document.querySelector('#modal').classList.remove('open');renderConnectors();toast(`${target.name} demo connection active`)}),0)
 }
 function openConnectInsight(type){
@@ -1087,7 +1087,7 @@ function showSignedOutScreen() {
         <button class="gold" id="demoEntry">Enter demo workspace</button>
         <button class="outline" id="accountEntry">Sign in to an account</button>
 
-        <small>Sprint 34 · Secure account authentication</small>
+        <small> · Secure account authentication</small>
       </section>
     </div>
   `;
