@@ -100,7 +100,7 @@ app.innerHTML = `
     <main class="page" id="mainPage">
       <section class="welcome-card">
         <div>
-          <span class="micro">ATLAS EXECUTIVE COMMAND CENTER · SPRINT 35</span>
+          <span class="micro">ATLAS EXECUTIVE COMMAND CENTER · SPRINT 36</span>
           <h1 id="dynamicGreeting">Good afternoon, Brian.</h1>
           <p>Atlas reviewed your business overnight and ranked the three items that matter most today.</p>
           <div class="welcome-actions"><button class="gold" id="briefBtn">View executive brief</button><button class="ghost" id="actionTrackerBtn">Open action tracker</button><button class="ghost" id="askBtn">Ask Atlas</button></div>
@@ -138,7 +138,7 @@ app.innerHTML = `
       </section>
 
       <section class="panel connect-overview" id="connectOverview">
-        <div class="section-head"><div><span class="micro">SPRINT 35 · ATLAS CONNECT</span><h2>Your business signals in one command center</h2><p>Email, government notices, and trusted internet intelligence can feed the morning brief and Atlas recommendations.</p></div><button class="gold" id="openAtlasConnect">Open Atlas Connect</button></div>
+        <div class="section-head"><div><span class="micro">SPRINT 36 · ATLAS CONNECT</span><h2>Your business signals in one command center</h2><p>Email, government notices, and trusted internet intelligence can feed the morning brief and Atlas recommendations.</p></div><button class="gold" id="openAtlasConnect">Open Atlas Connect</button></div>
         <div class="connect-overview-grid">
           <article><span>IMPORTANT EMAIL</span><strong>4</strong><small>Messages needing attention</small></article>
           <article><span>AWAITING REPLY</span><strong>3</strong><small>Customer or vendor follow-ups</small></article>
@@ -240,7 +240,7 @@ const dashboardHTML = document.querySelector('#mainPage').innerHTML;
 
 const pageTemplates = {
   'Atlas Connect': `
-    <section class="page-heading"><div><span class="micro">ATLAS CONNECT · SPRINT 35</span><h1>Connect the systems that run your business</h1><p>Choose what Atlas may read, summarize, and monitor. Sending and account changes always require owner approval.</p></div><button class="outline ask-page" data-page="Atlas Connect">Ask Atlas about connections</button></section>
+    <section class="page-heading"><div><span class="micro">ATLAS CONNECT · SPRINT 36</span><h1>Connect the systems that run your business</h1><p>Choose what Atlas may read, summarize, and monitor. Sending and account changes always require owner approval.</p></div><button class="outline ask-page" data-page="Atlas Connect">Ask Atlas about connections</button></section>
     <section class="connect-summary panel"><div><div><span class="micro">CONNECTION HEALTH</span><h2>One permission center for every business signal</h2><p>Atlas separates company data, external research, and recommendations so owners can verify every decision.</p></div><div class="connect-summary-stats"><article><span>ACTIVE DEMOS</span><strong id="connectedCount">2</strong><small>Government + internet</small></article><article><span>AVAILABLE NOW</span><strong>4</strong><small>Email and intelligence</small></article><article><span>OWNER CONTROL</span><strong>100%</strong><small>Permission-based access</small></article></div></div></section>
     <section class="connector-grid" id="connectorGrid"></section>
     <section class="page-grid two-up connect-detail-grid">
