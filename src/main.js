@@ -87,7 +87,7 @@ app.innerHTML = `
 
   <div class="workspace">
     <header class="topbar">
-      <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name">Atlas AI Demo Company⌄</button></div>
+      <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name"id="workspaceName">Atlas AI Demo Company⌄</button></div>
       <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
         <span class="release">ATLAS 35 · ACCOUNT WORKSPACE</span>
