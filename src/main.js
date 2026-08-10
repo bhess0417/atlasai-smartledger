@@ -859,7 +859,7 @@ if (workspaces?.length) {
   if (workspaceName) {
     workspaceName.textContent = workspaces[0].name || 'My Workspace';
   }
-}
+}}
   renderOpportunityCenter();
   document.querySelector('#openAtlasConnect')?.addEventListener('click',()=>showPage('Atlas Connect'));
   document.querySelectorAll('[data-connect-insight]').forEach(btn=>btn.addEventListener('click',()=>openConnectInsight(btn.dataset.connectInsight)));
