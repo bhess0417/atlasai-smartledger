@@ -87,11 +87,10 @@ app.innerHTML = `
 
   <div class="workspace">
     <header class="topbar">
-<<<<<<< HEAD
+
       <div><span class="micro">CURRENT WORKSPACE</span><button classs="workspace-name"id="workspaceName">Atlas AI Demo Company⌄</button></div>
-=======
-      <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name"id="workspaceName">Atlas AI Demo Company⌄</button></div>
-      <div class="top-actions">
+
+         <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
         <span class="release">ATLAS 36 · ACCOUNT WORKSPACE</span>
         <div class="profile"><span>BH</span><div><strong>Brian Hess</strong><small>Owner</small></div></div>
