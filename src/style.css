@@ -72,3 +72,12 @@
 
 /* Sprint 33 official AtlasAIUSA blue-and-white brand */
 .brand{gap:12px}.brand-mark{width:50px;height:50px;padding:3px;border-radius:14px;background:radial-gradient(circle at 35% 25%,rgba(94,202,255,.2),rgba(3,24,43,.96) 67%);border:1px solid rgba(83,190,255,.35);box-shadow:0 0 24px rgba(24,145,255,.22);overflow:hidden}.brand-mark svg{display:block;width:100%;height:100%}.brand>div strong{font-size:15px;letter-spacing:.04em;color:#fff}.brand>div strong span{color:#42baff}.brand>div small{color:#78bde9;letter-spacing:.18em}.sidebar{background:linear-gradient(180deg,#02070d 0%,#06111d 55%,#071522 100%)}.nav-item.active{background:linear-gradient(90deg,rgba(21,130,218,.24),rgba(28,89,139,.08));border-color:rgba(68,181,255,.35);box-shadow:inset 3px 0 #45bfff}.release{border-color:rgba(71,181,255,.35)!important;color:#9edcff!important;background:rgba(15,78,124,.18)!important}.gold{background:linear-gradient(135deg,#258ee8,#52c7ff)!important;color:#03101c!important;border-color:#6dd1ff!important;box-shadow:0 8px 24px rgba(20,142,231,.22)}.gold:hover{filter:brightness(1.08)}
+
+:root{
+  --atlas-primary:#38bdf8;
+  --atlas-primary-strong:#0ea5e9;
+  --atlas-accent:#67e8f9;
+  --atlas-navy:#061827;
+  --atlas-surface:#0b1d2e;
+  --atlas-border:#29445c;
+}

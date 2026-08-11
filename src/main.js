@@ -87,6 +87,9 @@ app.innerHTML = `
 
   <div class="workspace">
     <header class="topbar">
+<<<<<<< HEAD
+      <div><span class="micro">CURRENT WORKSPACE</span><button classs="workspace-name"id="workspaceName">Atlas AI Demo Company⌄</button></div>
+=======
       <div><span class="micro">CURRENT WORKSPACE</span><button class="workspace-name"id="workspaceName">Atlas AI Demo Company⌄</button></div>
       <div class="top-actions">
         <button class="outline" id="presentationBtn">Presentation mode</button>
@@ -846,6 +849,16 @@ function openOpportunity(id){
 }
 function openOpportunityManager(){openModal('Opportunity Center',`<p>Choose an opportunity from the dashboard to assign an owner, set a target date, advance status, or record realized savings.</p><div class="detail-box"><span>Savings YTD</span><strong>${money.format(opportunityTotals().realized)}</strong></div>`,'SPRINT 36 · EXECUTION')}
 
+<<<<<<< HEAD
+async function bindDashboard(){
+  const storedSession = localStorage.getItem('atlasSession');
+  if (storedSession) {
+    const session = JSON.parse(storedSession);
+    const workspaces = await supabaseWorkspaceRequest(
+  `workspaces?user_id=eq.${session.user.id}&select=*`,
+  session
+);
+=======
 async function bindDashboard(){
   const storedSession = localStorage.getItem('atlasSession');
   if (storedSession) {
@@ -860,6 +873,7 @@ if (workspaces?.length) {
     workspaceName.textContent = workspaces[0].name || 'My Workspace';
   }
 }}
+>>>>>>> 2c292567de1c8d328d6cee1bcd54e9236597f701
   renderOpportunityCenter();
   document.querySelector('#openAtlasConnect')?.addEventListener('click',()=>showPage('Atlas Connect'));
   document.querySelectorAll('[data-connect-insight]').forEach(btn=>btn.addEventListener('click',()=>openConnectInsight(btn.dataset.connectInsight)));
