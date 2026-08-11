@@ -97,5 +97,13 @@ button.gold,
 .tag {
   border-color: var(--atlas-border) !important;
 }
-
+.live,
+.release,
+.micro {
+  color: var(--atlas-primary) !important;
+}
+.outline {
+  border-color: var(--atlas-border) !important;
+  color: var(--atlas-primary) !important;
+}
 
