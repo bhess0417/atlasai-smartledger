@@ -849,16 +849,6 @@ function openOpportunity(id){
 }
 function openOpportunityManager(){openModal('Opportunity Center',`<p>Choose an opportunity from the dashboard to assign an owner, set a target date, advance status, or record realized savings.</p><div class="detail-box"><span>Savings YTD</span><strong>${money.format(opportunityTotals().realized)}</strong></div>`,'SPRINT 36 · EXECUTION')}
 
-<<<<<<< HEAD
-async function bindDashboard(){
-  const storedSession = localStorage.getItem('atlasSession');
-  if (storedSession) {
-    const session = JSON.parse(storedSession);
-    const workspaces = await supabaseWorkspaceRequest(
-  `workspaces?user_id=eq.${session.user.id}&select=*`,
-  session
-);
-=======
 async function bindDashboard(){
   const storedSession = localStorage.getItem('atlasSession');
   if (storedSession) {
