@@ -81,3 +81,21 @@
   --atlas-surface:#0b1d2e;
   --atlas-border:#29445c;
 }
+
+button:not(.status-positive):not(.status-negative) {
+  border-color: var(--atlas-border);
+}
+button.gold,
+.gold {
+  background: var(--atlas-primary-strong) !important;
+  border-color: var(--atlas-primary) !important;
+  color: #ffffff !important;
+}
+.badge,
+.pill,
+.chip,
+.tag {
+  border-color: var(--atlas-border) !important;
+}
+
+
