@@ -129,3 +129,11 @@ button.gold,
 .action-summary-grid strong {
   color: var(--atlas-primary) !important;
 }
+
+.outline,
+#openActionTracker,
+#askAtlas,
+#remindTomorrow {
+  color: var(--atlas-primary) !important;
+  border-color: var(--atlas-border) !important;
+}
