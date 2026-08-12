@@ -124,3 +124,8 @@ button.gold,
 .morning-brief strong {
   color: #ffffff;
 }
+.brief-grid strong,
+.opportunity-facts strong,
+.action-summary-grid strong {
+  color: var(--atlas-primary) !important;
+}
