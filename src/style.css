@@ -146,3 +146,7 @@ button.gold,
   color: var(--atlas-primary) !important;
   border-color: var(--atlas-border) !important;
 }
+#remindMorning {
+  color: var(--atlas-primary) !important;
+  border-color: var(--atlas-border) !important;
+}
