@@ -153,3 +153,67 @@ button.gold,
 .detailbox strong {
   color: var(--atlas-primary) !important;
 }
+/* Sprint 37 — Global Atlas Brand Alignment */
+
+/* Default interactive + highlighted UI */
+button,
+a,
+.ghost,
+.outline,
+.gold,
+.badge,
+.pill,
+.chip,
+.tag,
+.live,
+.release,
+.micro,
+.detailbox strong,
+.metric strong,
+.stat strong,
+.kpi strong,
+.value,
+.amount {
+  color: var(--atlas-primary) !important;
+  border-color: var(--atlas-border) !important;
+}
+
+/* Remove legacy gold-tinted card borders */
+.card,
+.detailbox,
+.opportunity-card,
+.biggest-opportunity,
+.morning-brief,
+.brief-card,
+.action-card,
+.metric-card {
+  border-color: var(--atlas-border) !important;
+}
+
+/* Atlas primary action */
+button.gold,
+.gold {
+  background: var(--atlas-primary-strong) !important;
+  color: #ffffff !important;
+  border-color: var(--atlas-primary) !important;
+}
+
+/* Keep meaningful positive status green */
+.status-positive,
+.positive,
+.success,
+.good,
+.up,
+.healthy {
+  color: #22c55e !important;
+}
+
+/* Keep meaningful warnings / risk red */
+.status-negative,
+.negative,
+.error,
+.danger,
+.risk,
+.down {
+  color: #ef4444 !important;
+}
