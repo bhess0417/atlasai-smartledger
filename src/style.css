@@ -150,3 +150,6 @@ button.gold,
   color: var(--atlas-primary) !important;
   border-color: var(--atlas-border) !important;
 }
+.detailbox strong {
+  color: var(--atlas-primary) !important;
+}
