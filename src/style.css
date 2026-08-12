@@ -112,5 +112,15 @@ button.gold,
   color: var(--atlas-primary) !important;
   border-color: var(--atlas-primary) !important;
 }
+.opportunity-card,
+.biggest-opportunity,
+.morning-brief {
+  border-color: var(--atlas-border) !important;
+}
 
 
+.opportunity-card strong,
+.biggest-opportunity strong,
+.morning-brief strong {
+  color: #ffffff;
+}
