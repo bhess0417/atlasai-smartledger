@@ -258,3 +258,8 @@ button.gold,
 .priority-group.warning b {
   color: var(--atlas-primary) !important;
 }
+
+/* Sprint 37 — Priority center refinement */
+.priority-group {
+  border-color: #2f6f9f !important;
+}
