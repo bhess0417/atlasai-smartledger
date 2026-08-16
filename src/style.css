@@ -248,3 +248,13 @@ button.gold,
   border-color: var(--atlas-border) !important;
   background: rgba(56,189,248,.10) !important;
 }
+/* Sprint 37 — Priority Center Atlas blue cleanup */
+.priority-group.warning header > span {
+  background: rgba(56,189,248,.12) !important;
+}
+
+.priority-group.warning header,
+.priority-group.warning header strong,
+.priority-group.warning b {
+  color: var(--atlas-primary) !important;
+}
