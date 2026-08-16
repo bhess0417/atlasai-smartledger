@@ -236,3 +236,7 @@ button.gold,
 #opportunitySummary strong {
   color: var(--atlas-primary) !important;
 }
+/* Sprint 37 — Opportunity row financial values */
+.opportunity-row b {
+  color: var(--atlas-primary) !important;
+}
