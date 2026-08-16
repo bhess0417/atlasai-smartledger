@@ -223,3 +223,8 @@ button.gold,
 .saved-metrics strong {
   color: var(--atlas-primary) !important;
 }
+/* Sprint 37 — Morning priority cards */
+.morning-priority strong,
+.morning-priority small {
+  color: var(--atlas-primary) !important;
+}
