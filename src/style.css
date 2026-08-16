@@ -228,3 +228,7 @@ button.gold,
 .morning-priority small {
   color: var(--atlas-primary) !important;
 }
+/* Sprint 37 — Morning priority value cleanup */
+.morning-priority > b {
+  color: var(--atlas-primary) !important;
+}
