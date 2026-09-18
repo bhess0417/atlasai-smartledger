@@ -1006,12 +1006,16 @@ function renderConnectors(){
   document.querySelectorAll('[data-connector]').forEach(btn=>btn.addEventListener('click',()=>handleConnector(btn.dataset.connector)));
   const count=document.querySelector('#connectedCount');if(count)count.textContent=connectorSummary().connected;
 }
+const GOOGLE_CLIENT_ID='988817790998-51ieqqn4tnhpe3nd9l7n5t8e5bdpr7p6.apps.googleusercontent.com';
+
+const GOOGLE_REDIRECT_URI='https://smartledger.atlasaiusa.com';
+const GMAIL_SCOPE='https://www.googleapis.com/auth/gmail.readonly';
 function handleConnector(id){
   const items=loadConnectors();const item=items.find(x=>x.id===id);if(!item)return;
   if(item.status==='demo'){openModal(`${item.name} demo connection`,`<p>${item.description}</p><div class="detail-box"><span>Current permission</span><strong>${item.permission}</strong></div><p>Live service activation will use secure OAuth or an agency-supported connection. Atlas will never expose credentials in the browser.</p>`,'ATLAS CONNECT · DEMO');return}
   if(item.status==='connected'){item.status='not-connected';item.lastSync='Disconnected';item.health='Ready';saveConnectors(items);renderConnectors();toast(`${item.name} disconnected`);return}
   openModal(`Connect ${item.name}`,`<p>This Sprint 35 experience confirms the permission and connection workflow. The live OAuth authorization will be activated in the next integration phase.</p><div class="permission-review"><article><span>READ</span><strong>Business messages and selected metadata</strong></article><article><span>ANALYZE</span><strong>Summaries, deadlines, payment promises, and opportunities</strong></article><article><span>PROTECT</span><strong>No sending or account changes without owner approval</strong></article></div><button class="gold modal-action" id="confirmConnector">Activate demo connection</button>`,'ATLAS CONNECT · OWNER PERMISSION');
-  setTimeout(()=>document.querySelector('#confirmConnector')?.addEventListener('click',()=>{const latest=loadConnectors();const target=latest.find(x=>x.id===id);target.status='connected';target.lastSync='Just now';target.health='Healthy';saveConnectors(latest);document.querySelector('#modal').classList.remove('open');renderConnectors();toast(`${target.name} demo connection active`)}),0)
+
 }
 function openConnectInsight(type){
   const insights={vendor:['Vendor price increase detected','Northstar Merchant Services proposed an 8% increase. Atlas recommends requesting competing rates before accepting the renewal.'],payment:['Customer payment promise','Horizon Retail committed to paying $42,600 on Friday. Atlas recommends updating the short-term cash forecast after the deposit clears.'],government:['Government deadline','The state annual report is due in 21 days. Confirm registered-agent details and prepare the filing this week.'],contract:['Contract renewal','The commercial insurance renewal remains the highest-impact time-sensitive opportunity.'],reply:['Three messages need replies','Atlas can prepare draft responses for owner review; sending remains disabled until approved.']};const value=insights[type]||['Atlas Connect insight','Atlas identified a business signal that deserves review.'];openModal(value[0],`<p>${value[1]}</p><button class="gold modal-action" id="askConnectInsight">Discuss with Atlas</button>`,'ATLAS CONNECT · BUSINESS SIGNAL');setTimeout(()=>document.querySelector('#askConnectInsight')?.addEventListener('click',()=>{document.querySelector('#modal').classList.remove('open');showPage('Dashboard');setTimeout(()=>answer(value[0]),60)}),0)
