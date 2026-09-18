@@ -1017,7 +1017,7 @@ function handleConnector(id){
   if(item.status==='connected'){item.status='not-connected';item.lastSync='Disconnected';item.health='Ready';saveConnectors(items);renderConnectors();toast(`${item.name} disconnected`);return}
   openModal(`Connect ${item.name}`,`<p>This Sprint 35 experience confirms the permission and connection workflow. The live OAuth authorization will be activated in the next integration phase.</p><div class="permission-review"><article><span>READ</span><strong>Business messages and selected metadata</strong></article><article><span>ANALYZE</span><strong>Summaries, deadlines, payment promises, and opportunities</strong></article><article><span>PROTECT</span><strong>No sending or account changes without owner approval</strong></article></div><button class="gold modal-action" id="confirmConnector">Activate demo connection</button>`,'ATLAS CONNECT · OWNER PERMISSION');
 }
-function startGm/ailOAuth(){
+function startGmailOAuth(){
 
   const params=new URLSearchParams({
     client_id:GOOGLE_CLIENT_ID,
