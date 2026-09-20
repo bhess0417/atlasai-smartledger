@@ -1008,7 +1008,7 @@ function renderConnectors(){
 }
 const GOOGLE_CLIENT_ID='988817790998-51ieqqn4tnhpe3nd9l7n5t8e5bdpr7p6.apps.googleusercontent.com';
 
-const GOOGLE_REDIRECT_URI='https://smartledger.atlasaiusa.com';
+const GOOGLE_REDIRECT_URI='https://smartledger.atlasaiusa.com/api/google-callback';
 const GMAIL_SCOPE='https://www.googleapis.com/auth/gmail.readonly';
 function handleConnector(id){
   const items=loadConnectors();const item=items.find(x=>x.id===id);if(!item)return;
