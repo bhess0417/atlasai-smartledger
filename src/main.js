@@ -1010,6 +1010,8 @@ const GOOGLE_CLIENT_ID='988817790998-51ieqqn4tnhpe3nd9l7n5t8e5bdpr7p6.apps.googl
 
 const GOOGLE_REDIRECT_URI='https://smartledger.atlasaiusa.com/api/google-callback';
 const GMAIL_SCOPE='https://www.googleapis.com/auth/gmail.readonly';
+if(gmailConnected){const items=loadConnectors();const gmail=items.find(x=>x.id==='gmail');if(gmail){gmail.status='connected';gmail.lastSync='Just now';gmail.health='Connected';saveConnectors(items);}}
+const gmailConnected=new URLSearchParams(window.location.search).get('gmail')==='connected';
 function handleConnector(id){
   const items=loadConnectors();const item=items.find(x=>x.id===id);if(!item)return;
   if(id==='gmail'){startGmailOAuth();return;}
