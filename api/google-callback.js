@@ -1,5 +1,9 @@
 export default async function handler(req, res) {
-  const { code, error } = req.query;
+  const { code, error, state } = req.query;
+ const cookieState = req.headers.cookie?.match(/(?:^|;\s*)google_oauth_state=([^;]+)/)?.[1];
+  if (!state || !cookieState || state !== cookieState) {
+  return res.status(403).send('Invalid OAuth state.');
+}
 
   if (error) {
     return res.redirect('/?gmail=denied');
@@ -30,6 +34,7 @@ export default async function handler(req, res) {
       console.error('Google token exchange failed');
       return res.redirect('/?gmail=error');
     }
+    return res.redirect('/?gmail=connected');
 
     return res.redirect('/?gmail=connected');
   } catch (error) {
