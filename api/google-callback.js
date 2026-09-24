@@ -63,7 +63,7 @@ export default async function handler(req, res) {
 });
 
 if (!saveResponse.ok) {
-  console.error('Gmail token storage failed');
+  console.error('Gmail token storage failed:', saveResponse.status, await saveResponse.text());
   return res.redirect('/?gmail=error');
 }
 
