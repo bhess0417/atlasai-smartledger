@@ -43,7 +43,7 @@ export default async function handler(req, res) {
 
 
     if (!tokenResponse.ok) {
-      console.error('Google token exchange failed');
+      console.error('Google token exchange failed:', tokenResponse.status, tokens.error, tokens.error_description);
       return res.redirect('/?gmail=error');
     }
    const saveResponse = await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections`, {
